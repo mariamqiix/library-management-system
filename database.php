@@ -41,13 +41,13 @@ $tables = [
         GenreId INT AUTO_INCREMENT PRIMARY KEY,
         Genre VARCHAR(20) 
     )",
-    // UserSession table
-    "CREATE TABLE IF NOT EXISTS user_session (
-        UserId INT,
-        Session VARCHAR(50),
-        Expire_date DATE,
-        FOREIGN KEY (UserId) REFERENCES user(UserId)
-    )",
+    // // UserSession table
+    // "CREATE TABLE IF NOT EXISTS user_session (
+    //     UserId INT,
+    //     Session VARCHAR(50),
+    //     Expire_date DATE,
+    //     FOREIGN KEY (UserId) REFERENCES user(UserId)
+    // )",
     // UserRule table
     "CREATE TABLE IF NOT EXISTS user_rule (
         UserId INT,
