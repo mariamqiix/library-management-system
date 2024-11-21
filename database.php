@@ -20,7 +20,7 @@ $tables = [
         Username VARCHAR(50) NOT NULL,
         FirstName VARCHAR(50) NOT NULL,
         LastName VARCHAR(50) NOT NULL,
-        Password VARCHAR(255) NOT NULL,
+        HashedPassword CHAR(60) NOT NULL,
         Email VARCHAR(100) NOT NULL
     )",
      // Book table
@@ -139,6 +139,67 @@ foreach ($books as $book) {
         }
     } else {
         echo "Error adding book: " . $conn->error . "<br>";
+    }
+}
+
+// Add users of type Admin
+$adminUsers = [
+    ["Username" => "mariamabbas", "FirstName" => "Mariam", "LastName" => "Abbas", "HashedPassword" => password_hash("123456789", PASSWORD_BCRYPT), "Email" => "mariam.abbas@example.com"],
+    ["Username" => "lamesadel", "FirstName" => "Lames", "LastName" => "Adel", "HashedPassword" => password_hash("123456789", PASSWORD_BCRYPT), "Email" => "lames.ader@example.com"],
+    ["Username" => "amaniemad", "FirstName" => "Amani", "LastName" => "Emad", "HashedPassword" => password_hash("123456789", PASSWORD_BCRYPT), "Email" => "amani.emad@example.com"],
+    ["Username" => "miramahmood", "FirstName" => "Mira", "LastName" => "Mahmood", "HashedPassword" => password_hash("123456789", PASSWORD_BCRYPT), "Email" => "mira.mahmood@example.com"],
+];
+
+// Get the RuleId for "Admin"
+$sql = "SELECT RuleId FROM rules WHERE Rule = 'Admin'";
+$result = $conn->query($sql);
+if ($result->num_rows > 0) {
+    $adminRuleId = $result->fetch_assoc()['RuleId'];
+
+    foreach ($adminUsers as $user) {
+        // Insert the user into the `user` table
+        $sql = "INSERT INTO user (Username, FirstName, LastName, HashedPassword, Email) VALUES 
+            ('{$user['Username']}', '{$user['FirstName']}', '{$user['LastName']}', '{$user['HashedPassword']}', '{$user['Email']}')";
+        if ($conn->query($sql) === TRUE) {
+            $userId = $conn->insert_id; // Get the new UserId
+
+            // Assign the Admin role to the user
+            $sql = "INSERT INTO user_rule (UserId, RuleId) VALUES ($userId, $adminRuleId)";
+            if ($conn->query($sql) === TRUE) {
+                echo "Admin user '{$user['FirstName']} {$user['LastName']}' added successfully<br>";
+            } else {
+                echo "Error assigning Admin role: " . $conn->error . "<br>";
+            }
+        } else {
+            echo "Error adding user '{$user['FirstName']} {$user['LastName']}': " . $conn->error . "<br>";
+        }
+    }
+} else {
+    echo "Error: Admin rule not found<br>";
+}
+
+function updatePassword($userId, $password) {
+    global $conn; // Assuming $conn is the database connection
+
+    // Hash the password
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+    // Prepare the SQL statement
+    $sql = "UPDATE user SET password = ? WHERE UserId = ?";
+
+    // Prepare statement
+    if ($stmt = $conn->prepare($sql)) {
+        // Bind parameters
+        $stmt->bind_param("si", $hashedPassword, $userId);
+
+        // Execute statement
+        if ($stmt->execute()) {
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
     }
 }
 ?>

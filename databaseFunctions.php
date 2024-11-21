@@ -3,7 +3,8 @@
 
 include 'db_connect.php';
 
-function searchBooks($searchString) {
+function searchBooks($searchString)
+{
     global $conn;
     // Sanitize the input to prevent SQL injection
     $searchString = $conn->real_escape_string($searchString);
@@ -35,7 +36,8 @@ function searchBooks($searchString) {
 }
 
 
-function CreatetUser($username, $firstName, $lastName, $password, $email, $rule = 'User') {
+function CreatetUser($username, $firstName, $lastName, $password, $email, $rule = 'User')
+{
     global $conn;
 
     // Sanitize inputs to prevent SQL injection
@@ -50,7 +52,7 @@ function CreatetUser($username, $firstName, $lastName, $password, $email, $rule 
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
     // Step 1: Insert the user into the 'user' table
-    $sql = "INSERT INTO user (Username, FirstName, LastName, Password, Email) 
+    $sql = "INSERT INTO user (Username, FirstName, LastName, HashedPassword, Email) 
             VALUES ('$username', '$firstName', '$lastName', '$hashedPassword', '$email')";
 
     if ($conn->query($sql) === TRUE) {
@@ -82,7 +84,8 @@ function CreatetUser($username, $firstName, $lastName, $password, $email, $rule 
     }
 }
 
-function createBook($title, $author, $publishYear, $availableBooks, $genre) {
+function createBook($title, $author, $publishYear, $availableBooks, $genre)
+{
     global $conn;
 
     // Sanitize inputs to prevent SQL injection
@@ -134,7 +137,8 @@ function createBook($title, $author, $publishYear, $availableBooks, $genre) {
 }
 
 
-function borrowBook($bookId, $userId) {
+function borrowBook($bookId, $userId)
+{
     global $conn;
 
     // Sanitize inputs to prevent SQL injection
@@ -174,7 +178,8 @@ function borrowBook($bookId, $userId) {
 }
 
 
-function returnBook($bookId, $userId) {
+function returnBook($bookId, $userId)
+{
     global $conn;
 
     // Sanitize inputs to prevent SQL injection
@@ -207,7 +212,8 @@ function returnBook($bookId, $userId) {
 }
 
 
-function updateBook($bookId, $title, $author, $publishYear, $availableBooks, $genre) {
+function updateBook($bookId, $title, $author, $publishYear, $availableBooks, $genre)
+{
     global $conn;
 
     // Sanitize inputs to prevent SQL injection
@@ -269,7 +275,8 @@ function updateBook($bookId, $title, $author, $publishYear, $availableBooks, $ge
     }
 }
 
-function borrowHistory() {
+function borrowHistory()
+{
     global $conn;
 
     // Step 1: SQL to fetch borrow history along with user details
@@ -296,7 +303,7 @@ function borrowHistory() {
         // Step 5: Fetch and populate the borrow history as objects
         while ($row = $result->fetch_assoc()) {
             // Create the userDetails object
-            $userDetails = (object)[
+            $userDetails = (object) [
                 'userId' => $row['UserId'],
                 'username' => $row['Username'],
                 'firstName' => $row['FirstName'],
@@ -305,7 +312,7 @@ function borrowHistory() {
             ];
 
             // Create the bookDetails object
-            $bookDetails = (object)[
+            $bookDetails = (object) [
                 'bookTitle' => $row['bookTitle'],
                 'bookAuthor' => $row['bookAuthor'],
                 'bookGenre' => $row['bookGenre'],
@@ -316,7 +323,7 @@ function borrowHistory() {
             ];
 
             // Add both user and book objects to the borrowHistory array
-            $borrowHistory[] = (object)[
+            $borrowHistory[] = (object) [
                 'userDetails' => $userDetails,
                 'bookDetails' => $bookDetails
             ];
@@ -327,9 +334,10 @@ function borrowHistory() {
     return $borrowHistory;
 }
 
-function addUserSession($UserId,$Session) {
+function addUserSession($UserId, $Session)
+{
     global $conn;
-    $sql = 'INSERT INTO user_session (UserId, Session) VALUES ('.$UserId.', "'.$Session.'")';
+    $sql = 'INSERT INTO user_session (UserId, Session) VALUES (' . $UserId . ', "' . $Session . '")';
     if ($conn->query($sql) === TRUE) {
         echo "User session added successfully.<br>";
     } else {
@@ -337,7 +345,8 @@ function addUserSession($UserId,$Session) {
     }
 }
 
-function getUserSession($Session) {
+function getUserSession($Session)
+{
     global $conn;
 
     // SQL to fetch user session details and associated user rule
@@ -358,7 +367,7 @@ function getUserSession($Session) {
         $row = $result->fetch_assoc();
 
         // Create an object to return the session details along with user rule
-        $userSession = (object)[
+        $userSession = (object) [
             'UserId' => $row['UserId'],
             'Session' => $row['Session'],
             'ExpireDate' => $row['Expire_date'],
@@ -374,7 +383,8 @@ function getUserSession($Session) {
 }
 
 
-function getBookDetails($BookID) {
+function getBookDetails($BookID)
+{
     global $conn;
 
     // SQL query to fetch book details and the associated genre
@@ -396,7 +406,7 @@ function getBookDetails($BookID) {
         $row = $result->fetch_assoc();
 
         // Create an object to return the book and genre details
-        $bookDetails = (object)[
+        $bookDetails = (object) [
             'BookId' => $row['BookId'],
             'Title' => $row['Title'],
             'Author' => $row['Author'],
@@ -413,9 +423,10 @@ function getBookDetails($BookID) {
 }
 
 
-function GetAllBooks() {
+function GetAllBooks()
+{
     global $conn;
-    
+
     // SQL to select all books along with their genres
     $sql = "
         SELECT b.BookId, b.Title, b.Author, b.Publish_year, b.Available_books, g.Genre
@@ -423,7 +434,7 @@ function GetAllBooks() {
         LEFT JOIN book_genre bg ON b.BookId = bg.BookId
         LEFT JOIN genres g ON bg.GenreId = g.GenreId
     ";
-    
+
     $result = $conn->query($sql);
 
     // Initialize an array to hold all book objects
@@ -434,7 +445,7 @@ function GetAllBooks() {
         // Loop through each row in the result set
         while ($row = $result->fetch_assoc()) {
             // Create a new book object for each row
-            $book = (object)[
+            $book = (object) [
                 'BookId' => $row['BookId'],
                 'Title' => $row['Title'],
                 'Author' => $row['Author'],
@@ -453,36 +464,50 @@ function GetAllBooks() {
 }
 
 
-function checkUserName($username) {
+function checkUser($type, $username)
+{
     global $conn;
-    $sql = "SELECT * FROM user WHERE Username = '$username' LIMIT 1";
+    $sql = "SELECT * FROM user WHERE '$type' = '$username' LIMIT 1";
     $result = $conn->query($sql);
     return $result->num_rows > 0;
 }
 
-function checkEmail($email) {
+
+
+function GetPassword($type, $username)
+{
     global $conn;
-    $sql = "SELECT * FROM user WHERE Email = '$email' LIMIT 1";
-    $result = $conn->query($sql);
-    return $result->num_rows > 0;
+
+    // Prepare the SQL statement to prevent SQL injection
+    $sql = "SELECT HashedPassword FROM user WHERE $type = ?";
+    $stmt = $conn->prepare($sql);
+
+    if ($stmt) {
+        // Bind the parameter
+        $stmt->bind_param("s", $username);
+
+        // Execute the statement
+        $stmt->execute();
+
+        // Get the result
+        $result = $stmt->get_result();
+
+        // Fetch the password
+        $data = $result->fetch_assoc();
+
+        // Close the statement
+        $stmt->close();
+
+        return $data['HashedPassword'] ?? null;
+    } else {
+        // Handle query preparation error
+        die("Error preparing query: " . $conn->error);
+    }
 }
 
-function GetUSerPasswordByUserName($username) {
-    global $conn;
-    $sql = "SELECT Password FROM user WHERE Username = '$username' LIMIT 1";
-    $result = $conn->query($sql);
-    return $result->fetch_assoc();
-}
 
-
-function GetUSerPasswordByEmail($email) {
-    global $conn;
-    $sql = "SELECT Password FROM user WHERE Email = '$email' LIMIT 1";
-    $result = $conn->query($sql);
-    return $result->fetch_assoc();
-}
-
-function DeleteUserSession($Session) {
+function DeleteUserSession($Session)
+{
     global $conn;
     $sql = "DELETE FROM user_session WHERE Session = '$Session'";
     if ($conn->query($sql) === TRUE) {
@@ -492,19 +517,21 @@ function DeleteUserSession($Session) {
     }
 }
 
-function DeleteUserSessionByUserId($UserId) {
+function DeleteUserSessionByUserId($UserId)
+{
     global $conn;
     $sql = "DELETE FROM user_session WHERE UserId = $UserId";
-    if ($conn ->query($sql) === TRUE) {
+    if ($conn->query($sql) === TRUE) {
         echo "User session deleted successfully.<br>";
     } else {
         echo "Error deleting user session: " . $conn->error . "<br>";
     }
 }
 
-function getUserIdByEmail($Email) {
+function getUserId($type, $Email)
+{
     global $conn;
-    $sql = "SELECT UserId FROM user WHERE Email = '$Email'";
+    $sql = "SELECT UserId FROM user WHERE '$type = '$Email'";
     $result = $conn->query($sql);
     $userIds = [];
     if ($result->num_rows > 0) {
@@ -514,21 +541,9 @@ function getUserIdByEmail($Email) {
     }
     return $userIds;
 }
-function GetUserIdByUserName($UserName) {
-    global $conn;
-    $sql = 'SELECT UserId FROM user WHERE Username = "'.$UserName.'"';
-    $result = $conn->query($sql);
-    $userIds = [];
-    if ($result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $userIds[] = $row['
-            UserId'];
-        }}
-        return $userIds;
-}
 
-
-function getGenreId($genre) {
+function getGenreId($genre)
+{
     global $conn;
 
     // Check if the genre exists
@@ -549,6 +564,15 @@ function getGenreId($genre) {
             return null; // Return null if there was an error
         }
     }
+}
+
+function GetUser($type, $user)
+{
+    global $conn;
+    $sql = "SELECT * FROM user WHERE $type = '$user' ";
+    $result = $conn->query($sql);
+    return $result->num_rows > 0;
+
 }
 
 ?>
