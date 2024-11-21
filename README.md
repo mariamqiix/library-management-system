@@ -1,4 +1,3 @@
-
 # Library Management System
 
 This project is a simple library management system built with PHP and MySQL.
@@ -62,7 +61,7 @@ Open the XAMPP Control Panel and start the Apache and MySQL services.
    ```
 3. Run the PHP server:
    ```sh
-    php -S localhost:8000 router.php
+    php -S localhost:8000 home.php
    ```
 
 #### Using XAMPP
@@ -89,4 +88,5 @@ Open your web browser and go to `http://localhost/library_management` to access 
 ## License
 
 This project is licensed under the MIT License.
+
 # library-management-system
