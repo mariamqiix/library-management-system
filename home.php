@@ -79,11 +79,11 @@ if (preg_match('/fetch_books\.php/', $_SERVER['REQUEST_URI'])) {
     <a href="?page=home" class="<?= $page === 'home' ? 'active' : '' ?>">Home</a>
     <a href="?page=All Books" class="<?= $page === 'All Books' ? 'active' : '' ?>">All Books</a>
     <a href="?page=genres" class="<?= $page === 'genres' ? 'active' : '' ?>">Genres</a>
-    <a href="?page=my library" class="<?= $page === 'my library' ? 'active' : '' ?>">My Library</a>
     <?php
     session_start();
 
     if (isset($_SESSION['user_id']) || isset($_COOKIE['username'])) {
+      echo '<a href="?page=MyLibrary" class="' . ($page === 'MyLibrary' ? 'active' : '') . '">MyLibrary</a>';
       echo '<a href="?page=logout" class="' . ($page === 'logout' ? 'active' : '') . '">Logout</a>';
     } else {
       echo '<a href="?page=login" class="' . ($page === 'login' ? 'active' : '') . '">Login</a>';
@@ -96,6 +96,7 @@ if (preg_match('/fetch_books\.php/', $_SERVER['REQUEST_URI'])) {
     include 'db_connect.php';
     include 'databaseFunctions.php';
     include 'auth.php';
+    include 'books.php';
 
     // Display content based on the selected page
     if ($page === 'home') {
@@ -151,9 +152,24 @@ if (preg_match('/fetch_books\.php/', $_SERVER['REQUEST_URI'])) {
       echo "<p>Select a genre to see the books.</p>";
       echo '</div>';
       echo '</div>';
-    } elseif ($page === 'my library') {
-      echo "<h1>My Library</h1>";
-      echo "<p>Learn more about us on this page.</p>";
+    } elseif ($page === 'MyLibrary') {
+      $books = returnUserBooks(); // Fetch the user's borrowed books
+    
+      if (!empty($books)) {
+        echo "<ul>";
+        foreach ($books as $book) {
+          echo "<li>";
+          echo "<strong>Title:</strong> " . htmlspecialchars($book['Title']) . "<br>";
+          echo "<strong>Author:</strong> " . htmlspecialchars($book['Author']) . "<br>";
+          echo "<strong>Publish Year:</strong> " . htmlspecialchars($book['Publish_year']) . "<br>";
+          echo "<strong>Valid Until:</strong> " . htmlspecialchars($book['expire_date']) . "<br>";
+          echo "</li>";
+        }
+        echo "</ul>";
+      } else {
+        echo "<p>No books available at the moment.</p>";
+      }
+
     } elseif ($page === 'login') {
       login();
     } elseif ($page === 'register') {
@@ -169,30 +185,30 @@ if (preg_match('/fetch_books\.php/', $_SERVER['REQUEST_URI'])) {
 </body>
 
 <script>
-   function fetchBooks(genreId) {
+  function fetchBooks(genreId) {
     const booksContainer = document.getElementById('books-container');
     booksContainer.innerHTML = 'Loading...';
 
     fetch(`fetch_books.php?genreId=${genreId}`)
-        .then(response => {
-            console.log('Raw response:', response); // Log raw response
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const contentType = response.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                console.error('Invalid response type:', contentType);
-                return response.text().then(text => { throw new Error(`Response was not JSON: ${text}`); });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.error) {
-                throw new Error(data.error);
-            }
+      .then(response => {
+        console.log('Raw response:', response); // Log raw response
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          console.error('Invalid response type:', contentType);
+          return response.text().then(text => { throw new Error(`Response was not JSON: ${text}`); });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.error) {
+          throw new Error(data.error);
+        }
 
-            if (data.length > 0) {
-                const booksList = data.map(book => `
+        if (data.length > 0) {
+          const booksList = data.map(book => `
                     <li>
                         <strong>Title:</strong> ${book.Title}<br>
                         <strong>Author:</strong> ${book.Author}<br>
@@ -200,16 +216,16 @@ if (preg_match('/fetch_books\.php/', $_SERVER['REQUEST_URI'])) {
                         <strong>Available Copies:</strong> ${book.Available_books}
                     </li>
                 `).join('');
-                booksContainer.innerHTML = `<ul>${booksList}</ul>`;
-            } else {
-                booksContainer.innerHTML = '<p>No books available in this genre.</p>';
-            }
-        })
-        .catch(err => {
-            console.error('Fetch error:', err);
-            booksContainer.innerHTML = '<p>Error fetching books. Please try again later.</p>';
-        });
-}
+          booksContainer.innerHTML = `<ul>${booksList}</ul>`;
+        } else {
+          booksContainer.innerHTML = '<p>No books available in this genre.</p>';
+        }
+      })
+      .catch(err => {
+        console.error('Fetch error:', err);
+        booksContainer.innerHTML = '<p>Error fetching books. Please try again later.</p>';
+      });
+  }
 
 
 

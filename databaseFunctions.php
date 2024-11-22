@@ -549,19 +549,38 @@ function DeleteUserSessionByUserId($UserId)
     }
 }
 
-function getUserId($type, $Email)
-{
+function getUserId($type, $value) {
     global $conn;
-    $sql = "SELECT UserId FROM user WHERE '$type = '$Email'";
-    $result = $conn->query($sql);
-    $userIds = [];
-    if ($result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $userIds[] = $row['UserId'];
-        }
+
+    // Validate $type to prevent SQL injection
+    $allowedTypes = ['Username', 'Email'];
+    if (!in_array($type, $allowedTypes)) {
+        throw new Exception("Invalid field type");
     }
-    return $userIds;
+
+    // SQL query with a placeholder for $value
+    $sql = "SELECT UserId FROM user WHERE $type = ?";
+    
+    // Prepare the statement
+    if ($stmt = $conn->prepare($sql)) {
+        // Bind the parameter
+        $stmt->bind_param("s", $value);
+
+        // Execute the query
+        $stmt->execute();
+
+        // Fetch the result
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            return $row['UserId'];
+        } else {
+            return null; // User not found
+        }
+    } else {
+        die("Error preparing query: " . $conn->error);
+    }
 }
+
 
 function getGenreId($genre)
 {
