@@ -615,6 +615,42 @@ function GetUser($type, $user)
         return null; // No user found
     }
 }
+// Fetch all genres from the database
+function fetchGenres()
+{
+    global $conn; // Use the global database connection
+
+    $query = "SELECT * FROM genres";
+    $result = $conn->query($query);
+
+    if ($result->num_rows > 0) {
+        return $result->fetch_all(MYSQLI_ASSOC); // Return genres as an associative array
+    } else {
+        return []; // Return an empty array if no genres found
+    }
+}
+
+// Fetch books by a specific genre
+function fetchBooksByGenre($genreId)
+{
+    global $conn; // Use the global database connection
+
+    $stmt = $conn->prepare("
+        SELECT b.* 
+        FROM book b
+        JOIN book_genre bg ON b.BookId = bg.BookId
+        WHERE bg.GenreId = ?
+    ");
+    $stmt->bind_param("i", $genreId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        return $result->fetch_all(MYSQLI_ASSOC); // Return books as an associative array
+    } else {
+        return []; // Return an empty array if no books found
+    }
+}
 
 
 ?>
