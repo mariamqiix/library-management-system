@@ -467,11 +467,32 @@ function GetAllBooks()
 function checkUser($type, $username)
 {
     global $conn;
-    $sql = "SELECT * FROM user WHERE '$type' = '$username' LIMIT 1";
-    $result = $conn->query($sql);
-    return $result->num_rows > 0;
-}
 
+    // Define allowed types to prevent SQL injection
+    $allowedTypes = ['Username', 'Email']; // Adjust based on your database columns
+
+    if (!in_array($type, $allowedTypes)) {
+        return false; // Invalid type
+    }
+
+    // Prepare the SQL statement with a placeholder
+    $stmt = $conn->prepare("SELECT 1 FROM user WHERE $type = ? LIMIT 1");
+    if ($stmt === false) {
+        die('Prepare failed: ' . htmlspecialchars($conn->error));
+    }
+
+    // Bind the username parameter to the placeholder
+    $stmt->bind_param("s", $username);
+
+    // Execute the query
+    $stmt->execute();
+
+    // Store result to use num_rows
+    $stmt->store_result();
+
+    // Check if any rows returned
+    return $stmt->num_rows > 0;
+}
 
 
 function GetPassword($type, $username)
@@ -565,14 +586,35 @@ function getGenreId($genre)
         }
     }
 }
-
 function GetUser($type, $user)
 {
     global $conn;
-    $sql = "SELECT * FROM user WHERE $type = '$user' ";
-    $result = $conn->query($sql);
-    return $result->num_rows > 0;
 
+    // Prepare the SQL statement
+    $stmt = $conn->prepare("SELECT * FROM user WHERE $type = ?");
+    if ($stmt === false) {
+        error_log('SQL Prepare failed: ' . $conn->error); // Log the error for debugging
+        return null; // Return null on error
+    }
+
+    // Bind parameters and execute
+    $stmt->bind_param("s", $user);
+    if (!$stmt->execute()) {
+        error_log('SQL Execute failed: ' . $stmt->error); // Log the error for debugging
+        return null;
+    }
+
+    // Get the result
+    $result = $stmt->get_result();
+    if ($result && $result->num_rows > 0) {
+        $userData = $result->fetch_assoc(); // Fetch user data as an associative array
+        $stmt->close(); // Close the statement
+        return $userData;
+    } else {
+        $stmt->close(); // Close the statement
+        return null; // No user found
+    }
 }
+
 
 ?>

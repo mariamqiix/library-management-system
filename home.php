@@ -29,8 +29,17 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
     <a href="?page=All Books" class="<?= $page === 'All Books' ? 'active' : '' ?>">All Books</a>
     <a href="?page=genres" class="<?= $page === 'genres' ? 'active' : '' ?>">genres</a>
     <a href="?page=my library" class="<?= $page === 'my library' ? 'active' : '' ?>">my library</a>
-    <a href="?page=login" class="<?= $page === 'login' ? 'active' : '' ?>">login</a>
+    <?php
+    session_start();
 
+    if (isset($_SESSION['user_id']) || isset($_COOKIE['username'])) {
+      echo '<a href="?page=logout" class="' . ($page === 'home' ? 'active' : '') . '">Logout</a>';
+
+    } else {
+      // User is not logged in
+      echo '<a href="?page=login" class="' . ($page === 'login' ? 'active' : '') . '">Login</a>';
+    }
+    ?>
   </div>
 
   <div class="content">
@@ -73,6 +82,9 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
       login();
     } elseif ($page === 'register') {
       register();
+    }elseif ($page === 'logout') {
+      logout();
+
     } else {
       echo "<h1>Page Not Found</h1>";
       echo "<p>The page you are looking for does not exist.</p>";
@@ -82,7 +94,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
     ?>
   </div>
 
-  
+
 </body>
 
 </html>

@@ -1,26 +1,37 @@
 <?php
 
-
 function login()
 {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $username = $_POST['username'];
         $loginPassword = $_POST['password'];
-        $user = GetUser("Username", $username);
-        if ($user) {
+        $userBoolean = checkUser("Username", $username);
+        echo $userBoolean;
+        if ($userBoolean) {
             $password = GetPassword("Username", $username);
             if (password_verify($loginPassword, $password)) {
-                echo "<h1>Welcome, $username!</h1>";
-                echo "<p>You have successfully logged in.</p>";
+                $user = GetUser("Username",  $username);
+                echo json_encode($user);
+                echo $user;
+                // echo "<h1>Welcome, " . htmlspecialchars($user['Username']) . "</h1>";
+                // echo "<p>You have successfully logged in.</p>";
+                createUserSession($user['Username'], $user['UserId']);
+                header("Location: home.php?page=home");
+
             } else {
                 echo "<h1>Invalid Credentials</h1>";
                 echo "<p>The password you entered is incorrect.</p>";
             }
-        } else if (GetUser("Email", $username)) {
+        } else if (checkUser("Email", $username)) {
             $password = GetPassword("Email", $username);
             if (password_verify($loginPassword, $password)) {
-                echo "<h1>Welcome, $username!</h1>";
-                echo "<p>You have successfully logged in.</p>";
+                // echo "<p>You have successfully logged in.</p>";
+                $user = GetUser(type: "Email", user: $username);
+                // echo "<h1>Welcome, " . htmlspecialchars(string: $user['Title']) . "</h1>";
+                createUserSession($user['Username'], $user['UserId']);
+                header("Location: home.php?page=home");
+
+
             } else {
                 echo "<h1>Invalid Credentials</h1>";
                 echo "<p>The password you entered is incorrect.</p>";
@@ -28,7 +39,7 @@ function login()
 
         } else {
             echo "<h1>Invalid Credentials</h1>";
-            echo "<p>The username or password you entered is incorrect.</p>";
+            echo "<p>The username you entered is incorrect.</p>";
         }
     } else {
         echo "<h1>Login</h1>";
@@ -59,7 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Handle login
 } elseif (isset($_GET['action']) && $_GET['action'] === 'register') {
     register();
-}function register()
+}
+function register()
 {
     global $conn; // Ensure access to the database connection
 
@@ -111,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($error) {
             $safeError = htmlspecialchars($error, ENT_QUOTES, 'UTF-8');
             echo "<script>document.getElementById('error-message').innerHTML = '$safeError';</script>";
-                } else {
+        } else {
             // Call the CreateUser function to handle registration
             CreatetUser($username, $firstName, $lastName, $password, $email);
             header('Location: home.php?page=home');
@@ -126,6 +138,37 @@ function validatePassword($password)
     return preg_match($pattern, $password);
 }
 
+function logout()
+{
+    // Start the session if it's not already started
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    // Unset all session variables
+    $_SESSION = [];
+
+    // If there's a session cookie, delete it
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params["path"], $params["domain"],
+            $params["secure"], $params["httponly"]
+        );
+    }
+
+    // Destroy the session
+    session_destroy();
+
+    // Remove the 'username' cookie if it exists
+    if (isset($_COOKIE['username'])) {
+        setcookie("username", "", time() - 3600, "/");
+    }
+
+    // Redirect to the home page after logout
+    header("Location: home.php?page=home");
+    exit();
+}
 
 /// if we want to add number in ther future 
 // function validateISBN($isbn)
