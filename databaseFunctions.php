@@ -672,4 +672,35 @@ function fetchBooksByGenre($genreId)
 }
 
 
+function GetUserRule($UserId)
+{
+    global $conn;
+
+    // Prepare the SQL statement
+    $stmt = $conn->prepare("SELECT Rule FROM rules r JOIN user_rule ur ON r.RuleId = ur.RuleId WHERE ur.UserId = ?");
+    if ($stmt === false) {
+        error_log('SQL Prepare failed: ' . $conn->error); // Log the error for debugging
+        return null; // Return null on error
+    }
+
+    // Bind parameters and execute
+    $stmt->bind_param("i", $UserId);
+    if (!$stmt->execute()) {
+        error_log('SQL Execute failed: ' . $stmt->error); // Log the error for debugging
+        return null;
+    }
+
+    // Get the result
+    $result = $stmt->get_result();
+    if ($result && $result->num_rows > 0) {
+        $ruleData = $result->fetch_assoc(); // Fetch user rule data as an associative array
+        $stmt->close(); // Close the statement
+        return $ruleData['Rule']; // Return the user rule
+    } else {
+        $stmt->close(); // Close the statement
+        return null; // No user rule found
+    }
+}
+
+
 ?>

@@ -81,7 +81,7 @@ if (preg_match('/fetch_books\.php/', $_SERVER['REQUEST_URI'])) {
     <a href="?page=genres" class="<?= $page === 'genres' ? 'active' : '' ?>">Genres</a>
     <?php
     session_start();
-    if ((isset($_SESSION['user_id']) || isset($_COOKIE['username'])) && $_SESSION['role'] == 'admin') {
+    if ((isset($_SESSION['user_id']) || isset($_COOKIE['username'])) && $_SESSION['rule'] == 'Admin') {
       echo '<a href="?page=Adminstration" class="' . ($page === 'Adminstration' ? 'active' : '') . '">Adminstration</a>';
       echo '<a href="?page=libraryHistory" class="' . ($page === 'libraryHistory' ? 'active' : '') . '">libraryHistory</a>';
 
@@ -92,12 +92,6 @@ if (preg_match('/fetch_books\.php/', $_SERVER['REQUEST_URI'])) {
     } else {
       echo '<a href="?page=login" class="' . ($page === 'login' ? 'active' : '') . '">Login</a>';
     }
-
-    if ((isset($_SESSION['user_id']) || isset($_COOKIE['username'])) && $_SESSION['role'] == 'admin') {
-      echo '<a href="?page=Adminstration" class="' . ($page === 'Adminstration' ? 'active' : '') . '">Adminstration</a>';
-      echo '<a href="?page=libraryHistory" class="' . ($page === 'libraryHistory' ? 'active' : '') . '">libraryHistory</a>';
-
-    } 
     ?>
   </div>
 
@@ -188,6 +182,15 @@ if (preg_match('/fetch_books\.php/', $_SERVER['REQUEST_URI'])) {
       logout();
     }elseif ($page === 'Adminstration') {
     }elseif ($page === 'libraryHistory') {
+      $history = borrowHistory();
+      if (!empty($history)) {
+        echo '<table>';
+        foreach ($historyyy as $history) {
+          echo '<td>'. htmlspecialchars($historyyy['username']) . '</td>';
+      }
+      echo '</table>';
+
+    }
     } else {
       echo "<h1>Page Not Found</h1>";
       echo "<p>The page you are looking for does not exist.</p>";

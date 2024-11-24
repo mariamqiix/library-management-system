@@ -15,7 +15,7 @@ function login()
                 echo $user;
                 // echo "<h1>Welcome, " . htmlspecialchars($user['Username']) . "</h1>";
                 // echo "<p>You have successfully logged in.</p>";
-                createUserSession($user['Username'], $user['UserId']);
+                createUserSession($user['Username'],  $user['UserId'], $user['Rule']);
                 header("Location: home.php?page=home");
 
             } else {
@@ -28,7 +28,7 @@ function login()
                 // echo "<p>You have successfully logged in.</p>";
                 $user = GetUser(type: "Email", user: $username);
                 // echo "<h1>Welcome, " . htmlspecialchars(string: $user['Title']) . "</h1>";
-                createUserSession($user['Username'], $user['UserId']);
+                createUserSession($user['Username'], $user['UserId'], $user['Rule']);
                 header("Location: home.php?page=home");
 
 
@@ -56,14 +56,16 @@ function login()
 
 
 
-function createUserSession($userId, $username)
+function createUserSession($userId, $username,$rule)
 {
     // Store user information in session
     $_SESSION['user_id'] = $userId;
     $_SESSION['username'] = $username;
-
+    $_SESSION['rule'] = GetUserRule($username);
     // Set a cookie with the username (expires in 1 hour)
     setcookie("username", $username, time() + 3600, "/"); // "/" means available across the entire site
+    setcookie("rule", GetUserRule($username), time() + 3600, "/"); // "/" means available across the entire site
+
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
