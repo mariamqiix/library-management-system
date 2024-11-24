@@ -7,6 +7,42 @@ if (preg_match('/fetch_books\.php/', $_SERVER['REQUEST_URI'])) {
   exit;
 }
 
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  if (isset($_POST['formType'])) {
+    switch ($_POST['formType']) {
+      case 'addBook':
+        // Call the addBook function from the included file
+        addBook($_POST);
+        break;
+
+      case 'updateBook':
+        // Call the updateBook function from the included file
+        // updateBook($_POST);
+        break;
+
+      case 'registerUser':
+        // Call the registerUser function from the included file
+        // registerUser($_POST);
+        break;
+    }
+  }
+}
+// functions.php
+
+// Example function to handle adding a book
+function addBook($data)
+{
+  // Extract form data
+  $title = $data['addBookTitle'];
+  $author = $data['addAuthor'];
+  $publishYear = $data['addPublishYear'];
+  $availableBooks = $data['addAvailableBooks'];
+  echo $title;
+}
+
+// Similarly, define updateBook() and registerUser() functions here...
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -85,7 +121,7 @@ if (preg_match('/fetch_books\.php/', $_SERVER['REQUEST_URI'])) {
       echo '<a href="?page=Adminstration" class="' . ($page === 'Adminstration' ? 'active' : '') . '">Adminstration</a>';
       echo '<a href="?page=libraryHistory" class="' . ($page === 'libraryHistory' ? 'active' : '') . '">libraryHistory</a>';
 
-    } 
+    }
     if (isset($_SESSION['user_id']) || isset($_COOKIE['username'])) {
       echo '<a href="?page=MyLibrary" class="' . ($page === 'MyLibrary' ? 'active' : '') . '">MyLibrary</a>';
       echo '<a href="?page=logout" class="' . ($page === 'logout' ? 'active' : '') . '">Logout</a>';
@@ -180,26 +216,131 @@ if (preg_match('/fetch_books\.php/', $_SERVER['REQUEST_URI'])) {
       register();
     } elseif ($page === 'logout') {
       logout();
-    }elseif ($page === 'Adminstration') {
-    }elseif ($page === 'libraryHistory') {
+    } elseif ($page === 'Adminstration') {
+      echo "<h1 onclick=\"showPopUp('addBook')\">ADD BOOK</h1>";
+      echo "<h1 onclick=\"showPopUp('updateBook')\">UPDATE BOOK</h1>";
+      echo "<h1 onclick=\"showPopUp('registerUser')\">REGISTER USER</h1>";
+
+    } elseif ($page === 'libraryHistory') {
       $history = borrowHistory();
       if (!empty($history)) {
         echo '<table>';
         foreach ($historyyy as $history) {
-          echo '<td>'. htmlspecialchars($historyyy['username']) . '</td>';
-      }
-      echo '</table>';
+          echo '<td>' . htmlspecialchars($historyyy['username']) . '</td>';
+        }
+        echo '</table>';
 
-    }
+      } else {
+        echo "<h1>no history </h1>";
+      }
     } else {
       echo "<h1>Page Not Found</h1>";
       echo "<p>The page you are looking for does not exist.</p>";
     }
     ?>
   </div>
+
+  <!-- ADD BOOK Popup -->
+  <div id="addBook" style="display: none;">
+    <h2>Add a New Book</h2>
+    <form id="addBookForm">
+      <input type="hidden" name="formType" value="addBook">
+      <label for="addBookTitle">Book Title:</label>
+      <input type="text" id="addBookTitle" name="addBookTitle" required><br><br>
+
+      <label for="addAuthor">Author:</label>
+      <input type="text" id="addAuthor" name="addAuthor" required><br><br>
+
+      <label for="addPublishYear">Publish Year:</label>
+      <input type="number" id="addPublishYear" name="addPublishYear" required><br><br>
+
+      <label for="addAvailableBooks">Number of Copies:</label>
+      <input type="date" id="addAvailableBooks" name="addAvailableBooks" required><br><br>
+
+      <button type="submit">Add Book</button>
+      <button type="button" onclick="closePopUp('addBook')">Cancel</button>
+    </form>
+  </div>
+
+
+  <!-- Similarly, UPDATE BOOK and REGISTER USER forms will have unique formType values like "updateBook" and "registerUser". -->
+
+  <!-- UPDATE BOOK Popup -->
+  <!-- UPDATE BOOK Popup -->
+<div id="updateBook" style="display: none;">
+    <h2>Update Existing Book</h2>
+    <form id="updateBookForm">
+        <label for="bookSelect">Select Book Title:</label>
+        <select id="bookSelect" name="bookSelect" onchange="loadBookDetails(this)">
+            <!-- Options will be populated by JavaScript -->
+        </select><br><br>
+
+        <label for="updateBookTitle">Book Title:</label>
+        <input type="text" id="updateBookTitle" name="updateBookTitle"><br><br>
+
+        <label for="updateAuthor">Author:</label>
+        <input type="text" id="updateAuthor" name="updateAuthor"><br><br>
+
+        <label for="updatePublishYear">Publish Year:</label>
+        <input type="date" id="updatePublishYear" name="updatePublishYear"><br><br>
+
+        <label for="updateAvailableBooks">Number of Copies:</label>
+        <input type="number" id="updateAvailableBooks" name="updateAvailableBooks"><br><br>
+
+        <button type="submit">Update Book</button>
+        <button type="button" onclick="closePopUp('updateBook')">Cancel</button>
+    </form>
+</div>
+
+
+  <!-- REGISTER USER Popup -->
+  <div id="registerUser" style="display: none;">
+    <h2>Register a New User</h2>
+    <form id="registerUserForm">
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username"><br><br>
+
+      <label for="firstName">First Name:</label>
+      <input type="text" id="firstName" name="firstName"><br><br>
+
+      <label for="lastName">Last Name:</label>
+      <input type="text" id="lastName" name="lastName"><br><br>
+
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email"><br><br>
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password"><br><br>
+      <label for="rule">rule:</label>
+      <input type="rule" id="rule" name="rule"><br><br>
+
+      <button type="submit">Register User</button>
+      <button type="button" onclick="closePopUp('registerUser')">Cancel</button>
+    </form>
+  </div>
+
 </body>
 
 <script>
+
+  function showPopUp(id) {
+    const popup1 = document.getElementById("registerUser");
+    popup1.style.display = 'none';
+    const popup2 = document.getElementById("updateBook");
+    popup2.style.display = 'none';
+    const popup3 = document.getElementById("addBook");
+    popup3.style.display = 'none';
+    const popup = document.getElementById(id);
+    popup.style.display = 'block';
+  }
+
+  function closePopUp(id) {
+    const popup = document.getElementById(id);
+    popup.style.display = 'none';
+  }
+
+
+
   function fetchBooks(genreId) {
     const booksContainer = document.getElementById('books-container');
     booksContainer.innerHTML = 'Loading...';
@@ -242,6 +383,123 @@ if (preg_match('/fetch_books\.php/', $_SERVER['REQUEST_URI'])) {
       });
   }
 
+  document.getElementById('addBookForm').addEventListener('submit', function (e) {
+    e.preventDefault(); // Prevent the form from submitting normally
+
+    // Create a new FormData object to capture the form data
+    var formData = new FormData(this);
+
+    // Perform the AJAX request
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '<?php echo $_SERVER['PHP_SELF']; ?>', true); // Form action (same page)
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        // Close the popup if the response is successful
+        closePopUp('addBook');
+        alert('Book added successfully!'); // Optionally, show a success message
+      }
+    };
+    xhr.send(formData); // Send the form data to the server
+  });
+
+  function post(e, popup) {
+
+  }
+
+  document.getElementById('registerUserForm').addEventListener('submit', function (e) {
+    e.preventDefault(); // Prevent the form from submitting normally
+
+    // Create a new FormData object to capture the form data
+    var formData = new FormData(this);
+
+    // Perform the AJAX request
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '<?php echo $_SERVER['PHP_SELF']; ?>', true); // Form action (same page)
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        // Close the popup if the response is successful
+        closePopUp('registerUser');
+        alert('Book added successfully!'); // Optionally, show a success message
+      }
+    };
+    xhr.send(formData); // Send the form data to the server
+  });
+
+
+  document.getElementById('updateBookForm').addEventListener('submit', function (e) {
+    e.preventDefault(); // Prevent the form from submitting normally
+
+    // Create a new FormData object to capture the form data
+    var formData = new FormData(this);
+
+    // Perform the AJAX request
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '<?php echo $_SERVER['PHP_SELF']; ?>', true); // Form action (same page)
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        // Close the popup if the response is successful
+        closePopUp('updateBook');
+        alert('Book added successfully!'); // Optionally, show a success message
+      }
+    };
+    xhr.send(formData); // Send the form data to the server
+  });
+
+// Function to populate the book select dropdown with book titles
+function populateBookSelect() {
+    var select = document.getElementById('bookSelect');
+    select.innerHTML = ''; // Clear any existing options
+
+    // Fetch all books using AJAX or preloaded data (adjust based on your implementation)
+    fetchBooksFromServer(function(books) {
+        books.forEach(function(book) {
+            var option = document.createElement('option');
+            option.value = JSON.stringify(book); // Store the entire book object as a JSON string
+            option.textContent = book.Title; // Display the book title
+            select.appendChild(option);
+        });
+    });
+}
+
+// Function to load book details into the form when a book is selected
+function loadBookDetails(selectElement) {
+    var selectedBook = JSON.parse(selectElement.value); // Parse the JSON string back into an object
+    
+    if (selectedBook) {
+        // Use the book object to populate the form fields
+        document.getElementById('updateBookTitle').value = selectedBook.Title;
+        document.getElementById('updateAuthor').value = selectedBook.Author;
+        document.getElementById('updatePublishYear').value = selectedBook.PublishYear;
+        document.getElementById('updateAvailableBooks').value = selectedBook.AvailableBooks;
+    }
+}
+
+// Simulate fetching book data from the server (you can replace this with an AJAX call)
+function fetchBooksFromServer(callback) {
+    var books = <?php echo json_encode(GetAllBooks()); ?>; // PHP function to get books
+    callback(books);
+}
+
+function fetchBookDetails(bookId) {
+  fetch(`get_book.php?id=${bookId}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data && data.Title) {
+        // Use the Title property safely
+        document.getElementById('book-title').textContent = data.Title;
+      } else {
+        console.error('Book data is undefined or missing Title.');
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching book details:', error);
+    });
+}
+
+// Initialize the select dropdown when the page loads
+window.onload = function() {
+    populateBookSelect();
+};
 
 
 </script>

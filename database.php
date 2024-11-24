@@ -64,6 +64,7 @@ $tables = [
     "   CREATE TABLE IF NOT EXISTS borrowed_books (
         BookId INT,
         UserId INT,
+        borrow_date DATETIME DEFAULT (CURRENT_TIMESTAMP),
         expire_date DATETIME DEFAULT (CURRENT_TIMESTAMP + INTERVAL 3 DAY),
         FOREIGN KEY (BookId) REFERENCES book(BookId),
         FOREIGN KEY (UserId) REFERENCES user(UserId)

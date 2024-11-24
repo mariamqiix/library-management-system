@@ -281,15 +281,26 @@ function borrowHistory()
 
     // Step 1: SQL to fetch borrow history along with user details
     $sql = "
-        SELECT u.UserId, u.Username, u.FirstName, u.LastName, u.Email, 
-               b.Title AS bookTitle, b.Author AS bookAuthor, b.Publish_year AS publishYear, 
-               b.Available_books AS availableBooks, g.Genre AS bookGenre, bb.BorrowDate, bb.ReturnDate
+        SELECT 
+            u.UserId, 
+            u.Username, 
+            u.FirstName, 
+            u.LastName, 
+            u.Email, 
+            b.Title AS bookTitle, 
+            b.Author AS bookAuthor, 
+            YEAR(b.Publish_year) AS publishYear, 
+            b.Available_books AS availableBooks, 
+            g.Genre AS bookGenre, 
+            bb.borrow_date, 
+            bb.expire_date
         FROM borrowed_books bb
         JOIN user u ON bb.UserId = u.UserId
         JOIN book b ON bb.BookId = b.BookId
         LEFT JOIN book_genre bg ON b.BookId = bg.BookId
         LEFT JOIN genres g ON bg.GenreId = g.GenreId
-        ORDER BY bb.BorrowDate DESC
+        ORDER BY bb.borrow_date DESC;
+
     ";
 
     // Step 2: Execute the query
