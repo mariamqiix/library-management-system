@@ -11,6 +11,19 @@ if (preg_match('/fetch_books\.php/', $_SERVER['REQUEST_URI'])) {
   exit;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  $action = $_POST['action'] ?? '';
+  if ($action === 'borrowBook') {
+    $bookId = $_POST['bookId'] ?? '';
+    $userId = $_POST['userId'] ?? '';
+    print ($bookId . PHP_EOL);
+    print ($userId . PHP_EOL);
+    if (borrowBook($bookId, $userId)) {
+      echo "Book borrowed successfully.";
+    }
+  }
+}
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (isset($_POST['formType'])) {
@@ -164,6 +177,66 @@ function updateBookPost($data)
       border-radius: 5px;
       background-color: #fff;
     }
+
+    /* Basic styling for book list */
+    #bookList {
+      list-style: none;
+      padding: 0;
+    }
+
+    .book-item {
+      padding: 10px;
+      border: 1px solid #ccc;
+      margin: 5px 0;
+      cursor: pointer;
+    }
+
+    /* Sidebar styling */
+    .sidebar {
+      position: fixed;
+      right: 0;
+      top: 0;
+      width: 300px;
+      height: 100%;
+      background: #0b173d;
+      /* Matching color as shown in the image */
+      color: white;
+      box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+      display: none;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .sidebar img {
+      width: 100%;
+      height: auto;
+      margin-bottom: 10px;
+    }
+
+    .close-btn {
+      background: none;
+      color: white;
+      border: none;
+      font-size: 20px;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      cursor: pointer;
+    }
+
+    #borrowButton {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    #borrowButton:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 
@@ -201,9 +274,9 @@ function updateBookPost($data)
       $books = GetAllBooks();
 
       if (!empty($books)) {
-        echo "<ul>";
+        echo "<ul id='bookList'>";
         foreach ($books as $book) {
-          echo "<li>";
+          echo "<li class='book-item' onclick='showBookDetails(" . json_encode($book) . ")'>";
           echo "<strong>Title:</strong> " . htmlspecialchars($book->Title) . "<br>";
           echo "<strong>Author:</strong> " . htmlspecialchars($book->Author) . "<br>";
           echo "<strong>Publish Year:</strong> " . htmlspecialchars($book->PublishYear) . "<br>";
@@ -296,12 +369,21 @@ function updateBookPost($data)
     }
     ?>
   </div>
-
+  <div id="bookDetailsSidebar" class="sidebar">
+    <button class="close-btn" onclick="closeSidebar()">×</button>
+    <img id="bookImage" src="" alt="Book Cover">
+    <h2 id="bookTitle"></h2>
+    <p><strong>Author:</strong> <span id="bookAuthor"></span></p>
+    <p><strong>Publish Year:</strong> <span id="bookPublishYear"></span></p>
+    <p><strong>Genre:</strong> <span id="bookGenre"></span></p>
+    <p><strong>Available Copies:</strong> <span id="bookCopies"></span></p>
+    <button id="borrowButton" onclick="borrowSelectedBook()">Borrow</button>
+  </div>
   <!-- ADD BOOK Popup -->
   <div id="addBook" style="display: none;">
     <h2>Add a New Book</h2>
-    <form id="addBookForm" >
-    <input type="hidden" name="formType" value="addBookForm">
+    <form id="addBookForm">
+      <input type="hidden" name="formType" value="addBookForm">
 
       <input type="hidden" name="formType" value="addBook">
       <label for="addBookTitle">Book Title:</label>
@@ -331,8 +413,8 @@ function updateBookPost($data)
   <!-- UPDATE BOOK Popup -->
   <div id="updateBook" style="display: none;">
     <h2>Update Existing Book</h2>
-    <form id="updateBookForm" >
-    <input type="hidden" name="formType" value="updateBookForm">
+    <form id="updateBookForm">
+      <input type="hidden" name="formType" value="updateBookForm">
 
       <label for="bookSelect">Select Book Title:</label>
       <select id="bookSelect" name="bookSelect" onchange="loadBookDetails(this)">
@@ -362,7 +444,7 @@ function updateBookPost($data)
   <div id="registerUser" style="display: none;">
     <h2>Register a New User</h2>
     <form id="registerUserForm">
-    <input type="hidden" name="formType" value="registerUserForm">
+      <input type="hidden" name="formType" value="registerUserForm">
 
       <label for="username">Username:</label>
       <input type="text" id="username" name="username"><br><br>
@@ -471,7 +553,7 @@ function updateBookPost($data)
     xhr.send(formData); // Send the form data to the server
   });
 
- 
+
 
   document.getElementById('registerUserForm').addEventListener('submit', function (e) {
     e.preventDefault(); // Prevent the form from submitting normally
@@ -502,14 +584,14 @@ function updateBookPost($data)
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '<?php echo $_SERVER['PHP_SELF']; ?>', true); // Form action (same page)
     xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            // Close the popup if the response is successful
-            closePopUp('updateBook');
-            alert('Book updated successfully!'); // Optionally, show a success message
-        }
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        // Close the popup if the response is successful
+        closePopUp('updateBook');
+        alert('Book updated successfully!'); // Optionally, show a success message
+      }
     };
     xhr.send(formData); // Send the form data to the server
-});
+  });
 
 
   // Function to populate the book select dropdown with book titles
@@ -538,7 +620,7 @@ function updateBookPost($data)
       document.getElementById('updateAuthor').value = selectedBook.Author;
       document.getElementById('updatePublishYear').value = selectedBook.PublishYear;
       document.getElementById('updateAvailableBooks').value = selectedBook.AvailableBooks;
-      document.getElementById('updateGenr').value = selectedBook.Genre ;
+      document.getElementById('updateGenr').value = selectedBook.Genre;
     }
   }
 
@@ -568,7 +650,63 @@ function updateBookPost($data)
   window.onload = function () {
     populateBookSelect();
   };
+  let selectedBook = null;
 
+  function showBookDetails(book) {
+    selectedBook = book.BookId;
+
+    // Populate sidebar with book details
+    document.getElementById('bookTitle').innerText = book.Title;
+    document.getElementById('bookAuthor').innerText = book.Author;
+    document.getElementById('bookPublishYear').innerText = book.PublishYear;
+    document.getElementById('bookGenre').innerText = book.Genre;
+    document.getElementById('bookCopies').innerText = book.AvailableBooks;
+
+    // Set borrow button state
+    const borrowButton = document.getElementById('borrowButton');
+    if (book.AvailableBooks > 0) {
+      borrowButton.disabled = false;
+    } else {
+      borrowButton.disabled = true;
+    }
+
+    // Show sidebar
+    document.getElementById('bookDetailsSidebar').style.display = 'block';
+  }
+
+  function closeSidebar() {
+    document.getElementById('bookDetailsSidebar').style.display = 'none';
+    selectedBook = null;
+  }
+
+  function borrowSelectedBook() {
+    const userId = '<?php echo isset($_COOKIE['username']) ? $_COOKIE['username'] : null; ?>';
+    if (userId) {
+      borrowBook(selectedBook, userId);
+    } else {
+      alert('User not logged in!');
+    }
+  }
+  function borrowBook(bookId, userId) {
+    // Perform AJAX request to borrow the book
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '<?php echo $_SERVER['PHP_SELF']; ?>', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          alert('Book borrowed successfully!');
+          closeSidebar();
+          location.reload(); // Refresh to update available copies
+        } else {
+          console.error('Error:', xhr.responseText);
+          alert('Failed to borrow the book. Please try again.');
+        }
+      }
+    };
+    const params = `action=borrowBook&bookId=${encodeURIComponent(bookId)}&userId=${encodeURIComponent(userId)}`;
+    xhr.send(params);
+  }
 
 </script>
 

@@ -154,8 +154,8 @@ function borrowBook($bookId, $userId)
     $userId = $conn->real_escape_string($userId);
 
     // Step 1: Check if the book is available
-    $bookSql = "SELECT Available_books FROM book WHERE BookId = $bookId LIMIT 1";
-    $bookResult = $conn->query($bookSql);
+    $bookSql = "SELECT Available_books FROM book WHERE BookId = $bookId";
+    $bookResult = $conn->query(query: $bookSql);
 
     if ($bookResult->num_rows > 0) {
         $bookRow = $bookResult->fetch_assoc();
@@ -190,6 +190,10 @@ function returnBook($bookId, $userId)
 {
     global $conn;
 
+    if ($conn === null) {
+        echo "Database connection is not initialized.<br>";
+        return;
+    }
     // Sanitize inputs to prevent SQL injection
     $bookId = $conn->real_escape_string($bookId);
     $userId = $conn->real_escape_string($userId);
