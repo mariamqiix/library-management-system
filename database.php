@@ -23,8 +23,8 @@ $tables = [
         HashedPassword CHAR(60) NOT NULL,
         Email VARCHAR(100) NOT NULL
     )",
-     // Book table
-     "CREATE TABLE IF NOT EXISTS book (
+    // Book table
+    "CREATE TABLE IF NOT EXISTS book (
         BookId INT AUTO_INCREMENT PRIMARY KEY,
         Title VARCHAR(50),
         Author VARCHAR(20),
@@ -59,8 +59,9 @@ $tables = [
     "CREATE TABLE IF NOT EXISTS book_genre (
         BookId INT,
         GenreId INT,
-        FOREIGN KEY (GenreId) REFERENCES genres(GenreId)
-    )" , 
+        FOREIGN KEY (GenreId) REFERENCES genres(GenreId),
+        FOREIGN KEY (BookId) REFERENCES book(BookId)
+    )",
     "   CREATE TABLE IF NOT EXISTS borrowed_books (
         BookId INT,
         UserId INT,
@@ -68,7 +69,20 @@ $tables = [
         expire_date DATETIME DEFAULT (CURRENT_TIMESTAMP + INTERVAL 3 DAY),
         FOREIGN KEY (BookId) REFERENCES book(BookId),
         FOREIGN KEY (UserId) REFERENCES user(UserId)
+    )",
+    "  CREATE TABLE IF NOT EXISTS ImagesTable (
+        ImageId INT AUTO_INCREMENT PRIMARY KEY,
+        ImageData LONGBLOB
+    )",
+    "CREATE TABLE IF NOT EXISTS ImagesToUsersAndBooks (
+        ImageId INT,
+        UserId INT,
+        BookId INT,
+        FOREIGN KEY (ImageId) REFERENCES ImagesTable(ImageId),
+        FOREIGN KEY (UserId) REFERENCES user(UserId),
+        FOREIGN KEY (BookId) REFERENCES book(BookId)
     )"
+
 ];
 
 foreach ($tables as $table_sql) {
@@ -79,7 +93,11 @@ foreach ($tables as $table_sql) {
     }
 }
 
-
+// Example usage
+$filePath = './book.gif'; // Replace with your file path
+uploadFileToDatabase($filePath);
+$filePath = 'icons8-user-48.png'; // Replace with your file path
+uploadFileToDatabase($filePath);
 // Insert rules
 $rules = [
     "Admin",
@@ -123,7 +141,8 @@ $books = [
 
 foreach ($books as $book) {
     // Insert the book
-    $sql = "INSERT INTO book (Title, Author, Publish_year, Available_books) VALUES ('{$book['Title']}', '{$book['Author']}', '{$book['Publish_year']}', {$book['Available_books']})";
+    $sql = "INSERT INTO book (Title, Author, Publish_year, Available_books) 
+            VALUES ('{$book['Title']}', '{$book['Author']}', '{$book['Publish_year']}', {$book['Available_books']})";
     if ($conn->query($sql) === TRUE) {
         $bookId = $conn->insert_id; // Get the new BookId
 
@@ -137,6 +156,15 @@ foreach ($books as $book) {
             } else {
                 echo "Error linking book to genre: " . $conn->error . "<br>";
             }
+        }
+
+        // Link the book to the default image
+        $defaultImageId = 1; // Assuming default image ID is 1
+        $sql = "INSERT INTO ImagesToUsersAndBooks (ImageId, BookId) VALUES ($defaultImageId, $bookId)";
+        if ($conn->query($sql) === TRUE) {
+            echo "Default image linked for book '{$book['Title']}'<br>";
+        } else {
+            echo "Error linking default image: " . $conn->error . "<br>";
         }
     } else {
         echo "Error adding book: " . $conn->error . "<br>";
@@ -154,6 +182,7 @@ $adminUsers = [
 // Get the RuleId for "Admin"
 $sql = "SELECT RuleId FROM rules WHERE Rule = 'Admin'";
 $result = $conn->query($sql);
+
 if ($result->num_rows > 0) {
     $adminRuleId = $result->fetch_assoc()['RuleId'];
 
@@ -168,6 +197,15 @@ if ($result->num_rows > 0) {
             $sql = "INSERT INTO user_rule (UserId, RuleId) VALUES ($userId, $adminRuleId)";
             if ($conn->query($sql) === TRUE) {
                 echo "Admin user '{$user['FirstName']} {$user['LastName']}' added successfully<br>";
+
+                // Link the default image to the user in `ImagesToUsersAndBooks`
+                $defaultImageId = 2; // Assuming default image ID is 1
+                $sql = "INSERT INTO ImagesToUsersAndBooks (ImageId, UserId) VALUES ($defaultImageId, $userId)";
+                if ($conn->query($sql) === TRUE) {
+                    echo "Default image linked for user '{$user['FirstName']} {$user['LastName']}'<br>";
+                } else {
+                    echo "Error linking default image: " . $conn->error . "<br>";
+                }
             } else {
                 echo "Error assigning Admin role: " . $conn->error . "<br>";
             }
@@ -179,7 +217,9 @@ if ($result->num_rows > 0) {
     echo "Error: Admin rule not found<br>";
 }
 
-function updatePassword($userId, $password) {
+
+function updatePassword($userId, $password)
+{
     global $conn; // Assuming $conn is the database connection
 
     // Hash the password
@@ -203,4 +243,6 @@ function updatePassword($userId, $password) {
         return false;
     }
 }
+
+
 ?>

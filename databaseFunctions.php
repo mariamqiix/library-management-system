@@ -43,8 +43,7 @@ function searchBooks($searchString)
     return $books;
 }
 
-
-function CreatetUser($username, $firstName, $lastName, $password, $email, $rule = 'User')
+function CreatetUser($username, $firstName, $lastName, $password, $email, $rule = 'User', $imageId = 2)
 {
     global $conn;
 
@@ -56,7 +55,7 @@ function CreatetUser($username, $firstName, $lastName, $password, $email, $rule 
     $email = $conn->real_escape_string($email);
     $rule = $conn->real_escape_string($rule);
 
-    // Hash the password before storing it (better practice than storing plain text passworads)
+    // Hash the password before storing it (better practice than storing plain text passwords)
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
     // Step 1: Insert the user into the 'user' table
@@ -87,12 +86,20 @@ function CreatetUser($username, $firstName, $lastName, $password, $email, $rule 
         } else {
             echo "Error: Rule '$rule' not found.<br>";
         }
+
+        // Step 5: Use the provided imageId or default imageId = 2
+        $insertImageLinkSql = "INSERT INTO ImagesToUsersAndBooks (ImageId, UserId) VALUES ($imageId, $userId)";
+        if ($conn->query($insertImageLinkSql) === TRUE) {
+            echo "User linked to image (ImageId = $imageId).<br>";
+        } else {
+            echo "Error linking image to user: " . $conn->error . "<br>";
+        }
     } else {
         echo "Error inserting user: " . $conn->error . "<br>";
     }
 }
 
-function createBook($title, $author, $publishYear, $availableBooks, $genre)
+function createBook($title, $author, $publishYear, $availableBooks, $genre, $imageId = 1) 
 {
     global $conn;
 
@@ -105,7 +112,7 @@ function createBook($title, $author, $publishYear, $availableBooks, $genre)
 
     // Step 1: Check if the genre exists
     $genreSql = "SELECT GenreId FROM genres WHERE Genre = '$genre' LIMIT 1";
-    $genreResult = $conn->query(query: $genreSql);
+    $genreResult = $conn->query($genreSql);
 
     if ($genreResult->num_rows > 0) {
         // Genre exists, fetch the GenreId
@@ -139,6 +146,20 @@ function createBook($title, $author, $publishYear, $availableBooks, $genre)
         } else {
             echo "Error linking book with genre: " . $conn->error . "<br>";
         }
+
+        // Step 5: Use the provided ImageId (default is 1 if no image is provided)
+        if ($imageId) {
+            // Link the image to the book using the provided ImageId
+            $insertImageLinkSql = "INSERT INTO ImagesToUsersAndBooks (ImageId, BookId) VALUES ($imageId, $bookId)";
+            if ($conn->query($insertImageLinkSql) === TRUE) {
+                echo "Book image linked successfully.<br>";
+            } else {
+                echo "Error linking image to book: " . $conn->error . "<br>";
+            }
+        } else {
+            echo "No image provided, skipping image linking.<br>";
+        }
+
     } else {
         echo "Error inserting book: " . $conn->error . "<br>";
     }
@@ -269,9 +290,9 @@ function updateBook($bookId, $title, $author, $publishYear, $availableBooks, $ge
             $stmt = $conn->prepare("UPDATE book_genre SET GenreId = ? WHERE BookId = ?");
             $stmt->bind_param("ii", $genreId, $bookId);
             $stmt->execute();
-              
-        } 
-    } 
+
+        }
+    }
     // Close the connection
     $conn->close();
 }
@@ -440,12 +461,26 @@ function GetAllBooks()
 {
     global $conn;
 
-    // SQL to select all books along with their genres
+    // SQL to select all books along with their genres and images
     $sql = "
-        SELECT b.BookId, b.Title, b.Author, b.Publish_year, b.Available_books, g.Genre
-        FROM book b
-        LEFT JOIN book_genre bg ON b.BookId = bg.BookId
-        LEFT JOIN genres g ON bg.GenreId = g.GenreId
+        SELECT 
+            b.BookId, 
+            b.Title, 
+            b.Author, 
+            b.Publish_year, 
+            b.Available_books, 
+            g.Genre, 
+            i.ImageData
+        FROM 
+            book b
+        LEFT JOIN 
+            book_genre bg ON b.BookId = bg.BookId
+        LEFT JOIN 
+            genres g ON bg.GenreId = g.GenreId
+        LEFT JOIN 
+            ImagesToUsersAndBooks ibu ON b.BookId = ibu.BookId
+        LEFT JOIN 
+            ImagesTable i ON ibu.ImageId = i.ImageId
     ";
 
     $result = $conn->query($sql);
@@ -464,7 +499,8 @@ function GetAllBooks()
                 'Author' => $row['Author'],
                 'PublishYear' => $row['Publish_year'],
                 'AvailableBooks' => $row['Available_books'],
-                'Genre' => $row['Genre'] // Genre field
+                'Genre' => $row['Genre'], // Genre field
+                'Image' => base64_encode($row['ImageData']) // Convert binary image data to base64 string
             ];
 
             // Add the book object to the books array
@@ -562,7 +598,8 @@ function DeleteUserSessionByUserId($UserId)
     }
 }
 
-function getUserId($type, $value) {
+function getUserId($type, $value)
+{
     global $conn;
 
     // Validate $type to prevent SQL injection
@@ -573,7 +610,7 @@ function getUserId($type, $value) {
 
     // SQL query with a placeholder for $value
     $sql = "SELECT UserId FROM user WHERE $type = ?";
-    
+
     // Prepare the statement
     if ($stmt = $conn->prepare($sql)) {
         // Bind the parameter
@@ -622,8 +659,16 @@ function GetUser($type, $user)
 {
     global $conn;
 
-    // Prepare the SQL statement
-    $stmt = $conn->prepare("SELECT * FROM user WHERE $type = ?");
+    // Prepare the SQL statement to fetch user and related data (e.g., user image, role)
+    $stmt = $conn->prepare("
+        SELECT u.*, i.ImageData, ur.RuleId 
+        FROM user u
+        LEFT JOIN ImagesToUsersAndBooks ibu ON u.UserId = ibu.UserId
+        LEFT JOIN ImagesTable i ON ibu.ImageId = i.ImageId
+        LEFT JOIN user_rule ur ON u.UserId = ur.UserId
+        WHERE u.$type = ?
+    ");
+
     if ($stmt === false) {
         error_log('SQL Prepare failed: ' . $conn->error); // Log the error for debugging
         return null; // Return null on error
@@ -640,6 +685,12 @@ function GetUser($type, $user)
     $result = $stmt->get_result();
     if ($result && $result->num_rows > 0) {
         $userData = $result->fetch_assoc(); // Fetch user data as an associative array
+
+        // Check if image data is available and convert to base64 if it exists
+        if ($userData['ImageData']) {
+            $userData['ImageData'] = base64_encode($userData['ImageData']); // Convert binary image data to base64
+        }
+
         $stmt->close(); // Close the statement
         return $userData;
     } else {
@@ -647,6 +698,7 @@ function GetUser($type, $user)
         return null; // No user found
     }
 }
+
 // Fetch all genres from the database
 function fetchGenres()
 {
@@ -661,27 +713,48 @@ function fetchGenres()
         return []; // Return an empty array if no genres found
     }
 }
-
-// Fetch books by a specific genre
 function fetchBooksByGenre($genreId)
 {
     global $conn; // Use the global database connection
 
+    // Prepare SQL to fetch books along with their genres and image data
     $stmt = $conn->prepare("
-        SELECT b.* 
+        SELECT b.BookId, b.Title, b.Author, b.Publish_year, b.Available_books, g.Genre, i.ImageData
         FROM book b
         JOIN book_genre bg ON b.BookId = bg.BookId
+        JOIN genres g ON bg.GenreId = g.GenreId  -- Use the 'genres' table (as per your schema)
+        LEFT JOIN ImagesToUsersAndBooks iub ON b.BookId = iub.BookId
+        LEFT JOIN ImagesTable i ON i.ImageId = iub.ImageId
         WHERE bg.GenreId = ?
     ");
     $stmt->bind_param("i", $genreId);
     $stmt->execute();
     $result = $stmt->get_result();
 
+    $books = [];
+
     if ($result->num_rows > 0) {
-        return $result->fetch_all(MYSQLI_ASSOC); // Return books as an associative array
-    } else {
-        return []; // Return an empty array if no books found
+        // Fetch and process each book
+        while ($row = $result->fetch_assoc()) {
+            // Convert the image data to base64 if available
+            $imageData = !empty($row['ImageData']) ? base64_encode($row['ImageData']) : null;
+
+            // Create a book object
+            $book = (object) [
+                'BookId' => $row['BookId'],
+                'Title' => $row['Title'],
+                'Author' => $row['Author'],
+                'PublishYear' => $row['Publish_year'],
+                'AvailableBooks' => $row['Available_books'],
+                'Genre' => $row['Genre'], // Genre field from 'genres' table
+                'Image' => $imageData // Base64 encoded image data
+            ];
+
+            $books[] = $book; // Add the book to the books array
+        }
     }
+
+    return $books; // Return the array of books
 }
 
 
@@ -715,5 +788,91 @@ function GetUserRule($UserId)
     }
 }
 
+
+// Function to upload a file to the database
+function uploadFileToDatabase($filePath)
+{
+    // Use the global connection
+    global $conn;
+
+    // Check if the file exists
+    if (!file_exists($filePath)) {
+        die("Error: File not found at path $filePath");
+    }
+
+    // Read the file's binary content
+    $fileData = file_get_contents($filePath);
+
+    if ($fileData === false) {
+        die("Error: Could not read the file content.");
+    }
+
+    // Prepare the SQL query to insert the file into the database
+    $stmt = $conn->prepare("INSERT INTO ImagesTable (ImageData) VALUES (?)");
+    if (!$stmt) {
+        die("Error preparing the SQL statement: " . $conn->error);
+    }
+
+    // Bind the file data as a BLOB
+    $stmt->bind_param("b", $null);
+    $stmt->send_long_data(0, $fileData);
+
+    // Execute the query
+    if ($stmt->execute()) {
+        echo "File uploaded successfully. Image ID: " . $stmt->insert_id . "<br>";
+    } else {
+        echo "Error uploading file: " . $conn->error . "<br>";
+    }
+
+    // Close the statement
+    $stmt->close();
+}
+
+function uploadImageToDatabase2($imageFile)
+{
+    global $conn;
+
+    // Check if the file is uploaded successfully
+    if ($imageFile['error'] != UPLOAD_ERR_OK) {
+        die("Error: File upload failed. Error code: " . $imageFile['error']);
+    }
+
+    // Check if the file is an actual image
+    $imageType = mime_content_type($imageFile['tmp_name']);
+    if (strpos($imageType, 'image/') !== 0) {
+        die("Error: The uploaded file is not a valid image.");
+    }
+
+    // Read the image file as a binary string
+    $imageData = file_get_contents($imageFile['tmp_name']);
+    if ($imageData === false) {
+        die("Error: Could not read the image content.");
+    }
+
+    // Prepare the SQL query to insert the image data into the ImagesTable
+    $stmt = $conn->prepare("INSERT INTO ImagesTable (ImageData) VALUES (?)");
+    if (!$stmt) {
+        die("Error preparing the SQL statement: " . $conn->error);
+    }
+
+    // Bind the image data as a BLOB
+    $stmt->bind_param("b", $null);
+    $stmt->send_long_data(0, $imageData); // Send binary data to the query
+
+    // Execute the query
+    if ($stmt->execute()) {
+        // Get the ImageId of the newly inserted image
+        $imageId = $stmt->insert_id;
+
+        // Close the statement
+        $stmt->close();
+
+        // Return the ImageId
+        return $imageId;
+    } else {
+        echo "Error uploading image: " . $conn->error . "<br>";
+        return null;
+    }
+}
 
 ?>

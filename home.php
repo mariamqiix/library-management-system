@@ -56,8 +56,16 @@ function addBook($data)
   $author = $data['addAuthor'];
   $publishYear = $data['addPublishYear'];
   $availableBooks = $data['addAvailableBooks'];
-  $genr = $data['addGenr'];
-  createBook($title, $author, $publishYear, $availableBooks, $genr);
+  $genre = $data['addGenr'];
+  $imageFile = $_FILES['bookImage']; // The uploaded file
+  // Check if the file is null or not uploaded
+  if (empty($imageFile['name']) || $imageFile['error'] == UPLOAD_ERR_NO_FILE) {
+    // No file uploaded, return the default ImageId = 1
+    $imageID = 1;  // Default ImageId when no file is uploaded
+  } else {
+    $imageID = uploadImageToDatabase2($imageFile);
+  }
+  createBook($title, $author, $publishYear, $availableBooks, $genre, $imageID);
 }
 function registerUser($data)
 {
@@ -70,6 +78,7 @@ function registerUser($data)
     $firstName = isset($_POST['firstName']) ? trim(string: $_POST['firstName']) : '';
     $lastName = isset($_POST['lastName']) ? trim(string: $_POST['lastName']) : '';
     $rule = isset($_POST['rule']) ? trim(string: $_POST['rule']) : '';
+    $imageFile = $_FILES['userImage']; // The uploaded file
 
     // Validate inputs
     if (empty($username) || empty($email) || empty($password) || empty($firstName) || empty($lastName)) {
@@ -84,11 +93,17 @@ function registerUser($data)
 
     // Hash the password
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
+    // Check if the file is null or not uploaded
+    if (empty($imageFile['name']) || $imageFile['error'] == UPLOAD_ERR_NO_FILE) {
+      // No file uploaded, return the default ImageId = 1
+      $imageID = 2;  // Default ImageId when no file is uploaded
+    } else {
+      $imageID = uploadImageToDatabase2($imageFile);
+    }
     // Include the database functions file
     try {
       // Call the CreatetUser function to save the user
-      CreatetUser($username, $firstName, $lastName, $email, $hashedPassword, $rule);
+      CreatetUser($username, $firstName, $lastName, $hashedPassword, $email, $rule, $imageID);
       echo "User registered successfully.";
     } catch (Exception $e) {
       // Handle any errors that occur during user creation
@@ -291,9 +306,9 @@ function updateBookPost($data)
     } elseif ($page === 'All Books') {
       $books = GetAllBooks();
       if (!empty($books)) {
-        echo "<ul>";
+        echo "<ul id='bookList'>";
         foreach ($books as $book) {
-          echo "<li>";
+          echo "<li class='book-item' onclick='showBookDetails(" . json_encode($book) . ")'>";
           echo "<strong>Title:</strong> " . htmlspecialchars($book->Title) . "<br>";
           echo "<strong>Author:</strong> " . htmlspecialchars($book->Author) . "<br>";
           echo "<strong>Publish Year:</strong> " . htmlspecialchars($book->PublishYear) . "<br>";
@@ -385,22 +400,22 @@ function updateBookPost($data)
     <form id="addBookForm">
       <input type="hidden" name="formType" value="addBookForm">
 
-      <input type="hidden" name="formType" value="addBook">
       <label for="addBookTitle">Book Title:</label>
       <input type="text" id="addBookTitle" name="addBookTitle" required><br><br>
 
       <label for="addAuthor">Author:</label>
       <input type="text" id="addAuthor" name="addAuthor" required><br><br>
 
-      <label for="addGenr">Author:</label>
+      <label for="addGenr">Genr:</label>
       <input type="text" id="addGenr" name="addGenr" required><br><br>
 
       <label for="addPublishYear">Publish Year:</label>
-      <input type="number" id="addPublishYear" name="addPublishYear" required><br><br>
+      <input type="date" id="addPublishYear" name="addPublishYear" required><br><br>
 
       <label for="addAvailableBooks">Number of Copies:</label>
-      <input type="date" id="addAvailableBooks" name="addAvailableBooks" required><br><br>
-
+      <input type="number" id="addAvailableBooks" name="addAvailableBooks" required><br><br>
+      <label for="bookImage">Book Image (Optional):</label>
+      <input type="file" name="bookImage"><br>
       <button type="submit">Add Book</button>
       <button type="button" onclick="closePopUp('addBook')">Cancel</button>
     </form>
@@ -463,7 +478,8 @@ function updateBookPost($data)
 
       <label for="rule">rule:</label>
       <input type="rule" id="rule" name="rule"><br><br>
-
+      <label for="userImage">Profile Image (Optional):</label>
+      <input type="file" name="userImage"><br>
       <button type="submit">Register User</button>
       <button type="button" onclick="closePopUp('registerUser')">Cancel</button>
     </form>
@@ -512,20 +528,25 @@ function updateBookPost($data)
         if (data.error) {
           throw new Error(data.error);
         }
-
+console.log(data);
         if (data.length > 0) {
           const booksList = data.map(book => `
-                    <li>
-                        <strong>Title:</strong> ${book.Title}<br>
-                        <strong>Author:</strong> ${book.Author}<br>
-                        <strong>Publish Year:</strong> ${book.Publish_year}<br>
-                        <strong>Available Copies:</strong> ${book.Available_books}
-                    </li>
-                `).join('');
-          booksContainer.innerHTML = `<ul>${booksList}</ul>`;
+        <li class="book-item" onclick='showBookDetails(${JSON.stringify(book)})'>
+            <strong>Title:</strong> ${book.Title}<br>
+            <strong>Author:</strong> ${book.Author}<br>
+            <strong>Publish Year:</strong> ${book.PublishYear}<br>
+            <strong>Available Copies:</strong> ${book.AvailableBooks}<br>
+            <strong>Genre:</strong> ${book.Genre}
+        </li>
+              `).join('');
+
+          // Insert the list of books into the container
+          booksContainer.innerHTML = `<ul id="bookList">${booksList}</ul>`;
         } else {
+          // If no books, display a message
           booksContainer.innerHTML = '<p>No books available in this genre.</p>';
         }
+
       })
       .catch(err => {
         console.error('Fetch error:', err);
@@ -656,11 +677,18 @@ function updateBookPost($data)
     selectedBook = book.BookId;
 
     // Populate sidebar with book details
-    document.getElementById('bookTitle').innerText = book.Title;
+    // If `book.Image` is Base64-encoded, you can directly use it as the src for an image
+    let imageUrl = 'data:image/jpeg;base64,' + book.Image; // Adjust the MIME type accordingly (e.g., image/png, image/jpeg, etc.)
+
+    // Set the image source to the image URL
+    document.getElementById('bookImage').src = imageUrl; document.getElementById('bookTitle').innerText = book.Title;
     document.getElementById('bookAuthor').innerText = book.Author;
-    document.getElementById('bookPublishYear').innerText = book.PublishYear;
+    // Check if PublishYear is null and use Publish_year instead
+    document.getElementById('bookPublishYear').innerText = book.PublishYear || book.Publish_year;
+
+    // Check if AvailableBooks is null and use Available_books instead
+    document.getElementById('bookCopies').innerText = book.AvailableBooks || book.Available_books;
     document.getElementById('bookGenre').innerText = book.Genre;
-    document.getElementById('bookCopies').innerText = book.AvailableBooks;
 
     // Set borrow button state
     const borrowButton = document.getElementById('borrowButton');

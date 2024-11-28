@@ -11,8 +11,6 @@ function login()
             $password = GetPassword("Username", $username);
             if (password_verify($loginPassword, $password)) {
                 $user = GetUser("Username",  $username);
-                echo json_encode($user);
-                echo $user;
                 // echo "<h1>Welcome, " . htmlspecialchars($user['Username']) . "</h1>";
                 // echo "<p>You have successfully logged in.</p>";
                 createUserSession($user['Username'],  $user['UserId'], $user['Rule']);
@@ -72,17 +70,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Handle login
 } elseif (isset($_GET['action']) && $_GET['action'] === 'register') {
     register();
-}
-function register()
+}function register()
 {
     global $conn; // Ensure access to the database connection
-
 
     // Render the form
     echo "<h1>Register</h1>";
 
-
-    echo "<form method='post' id='register-form'>";
+    // Start form with enctype for file upload
+    echo "<form method='post' id='register-form' enctype='multipart/form-data'>";
     echo "<label for='username'>Username:</label><br>";
     echo "<input type='text' id='username' name='username'><br>";
     echo "<label for='first_name'>First Name:</label><br>";
@@ -95,6 +91,11 @@ function register()
     echo "<input type='password' id='password' name='password'><br>";
     echo "<label for='confirm_password'>Confirm Password:</label><br>";
     echo "<input type='password' id='confirm_password' name='confirm_password'><br>";
+    
+    // Add file input for image upload
+    echo "<label for='profile_image'>Profile Image:</label><br>";
+    echo "<input type='file' id='profile_image' name='profile_image'><br>";
+
     echo "<input type='submit' value='Register'>";
     echo "</form>";
     echo '<p><a href="home.php?page=login">Login</a></p>';
@@ -110,29 +111,44 @@ function register()
         $password = trim($_POST['password'] ?? '');
         $confirmPassword = trim($_POST['confirm_password'] ?? '');
 
+        // Collect image file (if uploaded)
+        $imageFile = $_FILES['profile_image'] ?? null;
+
         // Backend validation (server-side)
         $error = '';
         if (empty($username) || empty($firstName) || empty($lastName) || empty($password) || empty($confirmPassword) || empty($email)) {
             $error = "All fields are required.";
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $error = "Invalid email format.";
-        } elseif (!validatePassword($password)) {
-            $error = "Password must be 6-12 characters long and include at least one uppercase letter, one lowercase letter, one digit, and one special character.";
-        } elseif ($password !== $confirmPassword) {
-            $error = "Passwords do not match.";
-        }
+            $error = "Invalid email format.";}
+        // } elseif (!validatePassword($password)) {
+        //     $error = "Password must be 6-12 characters long and include at least one uppercase letter, one lowercase letter, one digit, and one special character.";
+        // } elseif ($password !== $confirmPassword) {
+        //     $error = "Passwords do not match.";
+        // }
 
         if ($error) {
             $safeError = htmlspecialchars($error, ENT_QUOTES, 'UTF-8');
             echo "<script>document.getElementById('error-message').innerHTML = '$safeError';</script>";
         } else {
-            // Call the CreateUser function to handle registration
-            CreatetUser($username, $firstName, $lastName, $password, $email);
-            header('Location: home.php?page=home');
+            // If image is uploaded, pass the image to the CreateUser function
+            $imageId = 2; // Default image ID if no image is uploaded
+            if ($imageFile && isset($imageFile['tmp_name']) && is_uploaded_file($imageFile['tmp_name'])) {
+                // Call a function to handle the image upload and return the image ID
+                $imageId = uploadImageToDatabase2($imageFile); // This function should return the ImageId
+            }
 
+            // Call the CreateUser function to handle registration with the imageId
+            CreatetUser($username, $firstName, $lastName, $password, $email, 'User', $imageId);
+            $user = GetUser(type: "Email", user: $email);
+            // echo "<h1>Welcome, " . htmlspecialchars(string: $user['Title']) . "</h1>";
+            createUserSession($user['Username'], $user['UserId'], $user['Rule']);
+            // Redirect after successful registration
+            header('Location: home.php?page=home');
+            exit; // Ensure the script stops executing after redirect
         }
     }
 }
+
 
 function validatePassword($password)
 {
@@ -165,6 +181,8 @@ function logout()
     // Remove the 'username' cookie if it exists
     if (isset($_COOKIE['username'])) {
         setcookie("username", "", time() - 3600, "/");
+        setcookie("rule", "", time() - 3600, "/");
+
     }
 
     // Redirect to the home page after logout
