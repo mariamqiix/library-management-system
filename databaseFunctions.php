@@ -3,6 +3,14 @@
 
 include 'db_connect.php';
 
+// Open a new connection to the MySQL database
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Check for connection errors
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
 function searchBooks($searchString)
 {
     global $conn;
@@ -211,69 +219,59 @@ function returnBook($bookId, $userId)
     }
 }
 
-
 function updateBook($bookId, $title, $author, $publishYear, $availableBooks, $genre)
 {
+    // Obtain a database connection
     global $conn;
 
-    // Sanitize inputs to prevent SQL injection
-    $bookId = $conn->real_escape_string($bookId);
-    $title = $conn->real_escape_string($title);
-    $author = $conn->real_escape_string($author);
-    $publishYear = $conn->real_escape_string($publishYear);
-    $availableBooks = $conn->real_escape_string($availableBooks);
-    $genre = $conn->real_escape_string($genre);
-
+    if ($conn === null) {
+        echo "Database connection is not initialized.<br>";
+        return;
+    }
     // Step 1: Check if the book exists
-    $bookSql = "SELECT * FROM book WHERE BookId = $bookId LIMIT 1";
-    $bookResult = $conn->query($bookSql);
+    $stmt = $conn->prepare("SELECT * FROM book WHERE BookId = ?");
+    $stmt->bind_param("i", $bookId);
+    $stmt->execute();
+    $bookResult = $stmt->get_result();
 
     if ($bookResult->num_rows > 0) {
-        // Step 2: Update the book details
-        $updateBookSql = "UPDATE book SET 
-                          Title = '$title', 
-                          Author = '$author', 
-                          Publish_year = '$publishYear', 
-                          Available_books = '$availableBooks'
-                          WHERE BookId = $bookId";
-
-        if ($conn->query($updateBookSql) === TRUE) {
+        // Step 2: Update the book details using prepared statements
+        $stmt = $conn->prepare("UPDATE book SET Title = ?, Author = ?, Publish_year = ?, Available_books = ? WHERE BookId = ?");
+        $stmt->bind_param("sssii", $title, $author, $publishYear, $availableBooks, $bookId);
+        if ($stmt->execute()) {
             // Step 3: Check if the genre exists
-            $genreSql = "SELECT GenreId FROM genres WHERE Genre = '$genre' LIMIT 1";
-            $genreResult = $conn->query($genreSql);
+            $stmt = $conn->prepare("SELECT GenreId FROM genres WHERE Genre = ? LIMIT 1");
+            $stmt->bind_param("s", $genre);
+            $stmt->execute();
+            $genreResult = $stmt->get_result();
 
             if ($genreResult->num_rows > 0) {
-                // Genre exists, fetch the GenreId
                 $genreRow = $genreResult->fetch_assoc();
                 $genreId = $genreRow['GenreId'];
             } else {
-                // Genre does not exist, insert it
-                $insertGenreSql = "INSERT INTO genres (Genre) VALUES ('$genre')";
-                if ($conn->query($insertGenreSql) === TRUE) {
-                    $genreId = $conn->insert_id; // Get the new GenreId
+                // Insert new genre if it doesn't exist
+                $stmt = $conn->prepare("INSERT INTO genres (Genre) VALUES (?)");
+                $stmt->bind_param("s", $genre);
+                if ($stmt->execute()) {
+                    $genreId = $conn->insert_id;
                 } else {
                     echo "Error inserting genre: " . $conn->error . "<br>";
+                    $conn->close();
                     return;
                 }
             }
 
-            // Step 4: Update the book's genre in the book_genre table
-            $updateBookGenreSql = "INSERT INTO book_genre (BookId, GenreId)
-                                   VALUES ($bookId, $genreId)
-                                   ON DUPLICATE KEY UPDATE GenreId = $genreId";
-
-            if ($conn->query($updateBookGenreSql) === TRUE) {
-                echo "Book and genre updated successfully.<br>";
-            } else {
-                echo "Error linking book with genre: " . $conn->error . "<br>";
-            }
-        } else {
-            echo "Error updating book: " . $conn->error . "<br>";
-        }
-    } else {
-        echo "Error: Book not found.<br>";
-    }
+            // Update the book's genre
+            $stmt = $conn->prepare("UPDATE book_genre SET GenreId = ? WHERE BookId = ?");
+            $stmt->bind_param("ii", $genreId, $bookId);
+            $stmt->execute();
+              
+        } 
+    } 
+    // Close the connection
+    $conn->close();
 }
+
 
 function borrowHistory()
 {
