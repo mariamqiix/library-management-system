@@ -1,6 +1,7 @@
 <?php
 
 include 'db_connect.php';
+include 'databaseFunctions.php';
 
 // Logic to determine which content to display
 $page = isset($_GET['page']) ? $_GET['page'] : 'home';
@@ -72,7 +73,6 @@ function registerUser($data)
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
     // Include the database functions file
-    require_once 'databaseFunctions.php';
     try {
       // Call the CreatetUser function to save the user
       CreatetUser($username, $firstName, $lastName, $email, $hashedPassword, $rule);
@@ -96,7 +96,6 @@ function updateBookPost($data)
   $publishYear = $data['updatePublishYear'];
   $availableBooks = $data['updateAvailableBooks'];
   $genr = $data['updateGenr'];
-  require_once 'databaseFunctions.php';
 
   // Call the updateBook function
   updateBook($bookId, $title, $author, $publishYear, $availableBooks, $genr);
@@ -193,7 +192,6 @@ function updateBookPost($data)
   <div class="content">
     <?php
     include 'db_connect.php';
-    include 'databaseFunctions.php';
     include 'auth.php';
     include 'books.php';
 
@@ -302,7 +300,7 @@ function updateBookPost($data)
   <!-- ADD BOOK Popup -->
   <div id="addBook" style="display: none;">
     <h2>Add a New Book</h2>
-    <form id="addBookForm"  action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST">
+    <form id="addBookForm" >
     <input type="hidden" name="formType" value="addBookForm">
 
       <input type="hidden" name="formType" value="addBook">
@@ -333,7 +331,7 @@ function updateBookPost($data)
   <!-- UPDATE BOOK Popup -->
   <div id="updateBook" style="display: none;">
     <h2>Update Existing Book</h2>
-    <form id="updateBookForm"  action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST">
+    <form id="updateBookForm" >
     <input type="hidden" name="formType" value="updateBookForm">
 
       <label for="bookSelect">Select Book Title:</label>
@@ -363,7 +361,7 @@ function updateBookPost($data)
   <!-- REGISTER USER Popup -->
   <div id="registerUser" style="display: none;">
     <h2>Register a New User</h2>
-    <form id="registerUserForm"  action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST">
+    <form id="registerUserForm">
     <input type="hidden" name="formType" value="registerUserForm">
 
       <label for="username">Username:</label>
@@ -489,16 +487,13 @@ function updateBookPost($data)
       if (xhr.readyState === 4 && xhr.status === 200) {
         // Close the popup if the response is successful
         closePopUp('registerUser');
-        alert('Book added successfully!'); // Optionally, show a success message
+        alert('user added successfully!'); // Optionally, show a success message
       }
     };
     xhr.send(formData); // Send the form data to the server
   });
-
-
   document.getElementById('updateBookForm').addEventListener('submit', function (e) {
     e.preventDefault(); // Prevent the form from submitting normally
-
 
     // Create a new FormData object to capture the form data
     var formData = new FormData(this);
@@ -507,14 +502,15 @@ function updateBookPost($data)
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '<?php echo $_SERVER['PHP_SELF']; ?>', true); // Form action (same page)
     xhr.onreadystatechange = function () {
-      if (xhr.readyState === 4 && xhr.status === 200) {
-        // Close the popup if the response is successful
-        closePopUp('updateBook');
-        alert('Book updated successfully!'); // Optionally, show a success message
-      }
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            // Close the popup if the response is successful
+            closePopUp('updateBook');
+            alert('Book updated successfully!'); // Optionally, show a success message
+        }
     };
     xhr.send(formData); // Send the form data to the server
-  });
+});
+
 
   // Function to populate the book select dropdown with book titles
   function populateBookSelect() {
