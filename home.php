@@ -528,7 +528,7 @@ function updateBookPost($data)
         if (data.error) {
           throw new Error(data.error);
         }
-console.log(data);
+        console.log(data);
         if (data.length > 0) {
           const booksList = data.map(book => `
         <li class="book-item" onclick='showBookDetails(${JSON.stringify(book)})'>

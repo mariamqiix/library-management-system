@@ -1,6 +1,7 @@
-<?php 
+<?php
 
-function returnUserBooks() {
+function returnUserBooks()
+{
     global $conn; // Assuming $conn is the database connection
 
     // Check if the username cookie exists
@@ -47,7 +48,7 @@ function returnUserBooks() {
 
         return $books;
     } else {
-        echo("Error preparing query: " . $conn->error);
+        echo ("Error preparing query: " . $conn->error);
     }
 }
 

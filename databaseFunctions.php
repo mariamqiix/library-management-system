@@ -99,7 +99,7 @@ function CreatetUser($username, $firstName, $lastName, $password, $email, $rule 
     }
 }
 
-function createBook($title, $author, $publishYear, $availableBooks, $genre, $imageId = 1) 
+function createBook($title, $author, $publishYear, $availableBooks, $genre, $imageId = 1)
 {
     global $conn;
 

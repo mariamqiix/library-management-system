@@ -10,10 +10,10 @@ function login()
         if ($userBoolean) {
             $password = GetPassword("Username", $username);
             if (password_verify($loginPassword, $password)) {
-                $user = GetUser("Username",  $username);
+                $user = GetUser("Username", $username);
                 // echo "<h1>Welcome, " . htmlspecialchars($user['Username']) . "</h1>";
                 // echo "<p>You have successfully logged in.</p>";
-                createUserSession($user['Username'],  $user['UserId'], $user['Rule']);
+                createUserSession($user['Username'], $user['UserId'], $user['Rule']);
                 header("Location: home.php?page=home");
 
             } else {
@@ -54,7 +54,7 @@ function login()
 
 
 
-function createUserSession($userId, $username,$rule)
+function createUserSession($userId, $username, $rule)
 {
     // Store user information in session
     $_SESSION['user_id'] = $userId;
@@ -70,7 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Handle login
 } elseif (isset($_GET['action']) && $_GET['action'] === 'register') {
     register();
-}function register()
+}
+function register()
 {
     global $conn; // Ensure access to the database connection
 
@@ -91,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo "<input type='password' id='password' name='password'><br>";
     echo "<label for='confirm_password'>Confirm Password:</label><br>";
     echo "<input type='password' id='confirm_password' name='confirm_password'><br>";
-    
+
     // Add file input for image upload
     echo "<label for='profile_image'>Profile Image:</label><br>";
     echo "<input type='file' id='profile_image' name='profile_image'><br>";
@@ -119,7 +120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($username) || empty($firstName) || empty($lastName) || empty($password) || empty($confirmPassword) || empty($email)) {
             $error = "All fields are required.";
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $error = "Invalid email format.";}
+            $error = "Invalid email format.";
+        }
         // } elseif (!validatePassword($password)) {
         //     $error = "Password must be 6-12 characters long and include at least one uppercase letter, one lowercase letter, one digit, and one special character.";
         // } elseif ($password !== $confirmPassword) {
@@ -169,9 +171,14 @@ function logout()
     // If there's a session cookie, delete it
     if (ini_get("session.use_cookies")) {
         $params = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000,
-            $params["path"], $params["domain"],
-            $params["secure"], $params["httponly"]
+        setcookie(
+            session_name(),
+            '',
+            time() - 42000,
+            $params["path"],
+            $params["domain"],
+            $params["secure"],
+            $params["httponly"]
         );
     }
 
