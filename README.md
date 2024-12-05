@@ -60,9 +60,17 @@ Open the XAMPP Control Panel and start the Apache and MySQL services.
    cd /path/to/your/project
    ```
 3. Run the PHP server:
-   ```sh
-    php -S localhost:8000 home.php
-   ```
+
+```sh
+ php -S localhost:8000
+```
+
+4. open teh local host
+
+```sh
+ http://localhost:8000/home.php
+```
+
 
 #### Using XAMPP
 
@@ -88,5 +96,3 @@ Open your web browser and go to `http://localhost/library_management` to access 
 ## License
 
 This project is licensed under the MIT License.
-
-# o

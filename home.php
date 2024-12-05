@@ -132,127 +132,11 @@ function updateBookPost($data)
 
 <!DOCTYPE html>
 <html lang="en">
-
+<link rel="stylesheet" href="style.css">
 <head>
   <meta charset="UTF-8">
   <title>Library Management System</title>
-  <style>
-    .navbar a {
-      margin: 0 10px;
-      text-decoration: none;
-      color: blue;
-    }
 
-    .navbar a.active {
-      font-weight: bold;
-      color: red;
-    }
-
-    .content {
-      margin: 20px;
-      padding: 20px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      background-color: #f9f9f9;
-    }
-
-    .genres-container {
-      margin-top: 20px;
-      padding: 20px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      background-color: #eef;
-    }
-
-    .genres-container h1 {
-      margin-bottom: 15px;
-      font-size: 24px;
-      color: #333;
-    }
-
-    .genres-container button {
-      margin: 5px;
-      padding: 10px 15px;
-      font-size: 16px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .genres-container button:hover {
-      background-color: #0056b3;
-    }
-
-    #books-container {
-      margin-top: 20px;
-      padding: 15px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      background-color: #fff;
-    }
-
-    /* Basic styling for book list */
-    #bookList {
-      list-style: none;
-      padding: 0;
-    }
-
-    .book-item {
-      padding: 10px;
-      border: 1px solid #ccc;
-      margin: 5px 0;
-      cursor: pointer;
-    }
-
-    /* Sidebar styling */
-    .sidebar {
-      position: fixed;
-      right: 0;
-      top: 0;
-      width: 300px;
-      height: 100%;
-      background: #0b173d;
-      /* Matching color as shown in the image */
-      color: white;
-      box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
-      display: none;
-      padding: 20px;
-      overflow-y: auto;
-    }
-
-    .sidebar img {
-      width: 100%;
-      height: auto;
-      margin-bottom: 10px;
-    }
-
-    .close-btn {
-      background: none;
-      color: white;
-      border: none;
-      font-size: 20px;
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      cursor: pointer;
-    }
-
-    #borrowButton {
-      background: #007bff;
-      color: white;
-      border: none;
-      padding: 10px;
-      cursor: pointer;
-      width: 100%;
-    }
-
-    #borrowButton:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
-  </style>
 </head>
 
 <body>
@@ -369,14 +253,40 @@ function updateBookPost($data)
     } elseif ($page === 'libraryHistory') {
       $history = borrowHistory();
       if (!empty($history)) {
-        echo '<table>';
-        foreach ($historyyy as $history) {
-          echo '<td>' . htmlspecialchars($historyyy['username']) . '</td>';
-        }
-        echo '</table>';
-
+          echo '<table border="1" cellpadding="10">';
+          echo '<tr>
+                  <th>User ID</th>
+                  <th>Username</th>
+                  <th>First Name</th>
+                  <th>Last Name</th>
+                  <th>Email</th>
+                  <th>Book Title</th>
+                  <th>Book Author</th>
+                  <th>Genre</th>
+                  <th>Publish Year</th>
+                  <th>Available Books</th>
+                  <th>Borrow Date</th>
+                  <th>Return Date</th>
+                </tr>';
+          foreach ($history as $entry) {
+              echo '<tr>';
+              echo '<td>' . $entry->userDetails->userId . '</td>';
+              echo '<td>' . $entry->userDetails->username . '</td>';
+              echo '<td>' . $entry->userDetails->firstName . '</td>';
+              echo '<td>' . $entry->userDetails->lastName . '</td>';
+              echo '<td>' . $entry->userDetails->email . '</td>';
+              echo '<td>' . $entry->bookDetails->bookTitle . '</td>';
+              echo '<td>' . $entry->bookDetails->bookAuthor . '</td>';
+              echo '<td>' . $entry->bookDetails->bookGenre . '</td>';
+              echo '<td>' . $entry->bookDetails->publishYear . '</td>';
+              echo '<td>' . $entry->bookDetails->availableBooks . '</td>';
+              echo '<td>' . $entry->bookDetails->borrowDate . '</td>';
+              echo '<td>' . $entry->bookDetails->returnDate . '</td>';
+              echo '</tr>';
+          }
+          echo '</table>';
       } else {
-        echo "<h1>no history </h1>";
+          echo "<h1>No history available</h1>";
       }
     } else {
       echo "<h1>Page Not Found</h1>";

@@ -323,7 +323,6 @@ function borrowHistory()
         LEFT JOIN book_genre bg ON b.BookId = bg.BookId
         LEFT JOIN genres g ON bg.GenreId = g.GenreId
         ORDER BY bb.borrow_date DESC;
-
     ";
 
     // Step 2: Execute the query
@@ -352,8 +351,8 @@ function borrowHistory()
                 'bookGenre' => $row['bookGenre'],
                 'publishYear' => $row['publishYear'],
                 'availableBooks' => $row['availableBooks'],
-                'borrowDate' => $row['BorrowDate'],
-                'returnDate' => $row['ReturnDate']
+                'borrowDate' => $row['borrow_date'],
+                'returnDate' => $row['expire_date']
             ];
 
             // Add both user and book objects to the borrowHistory array
@@ -717,7 +716,7 @@ function fetchBooksByGenre($genreId)
 {
     global $conn; // Use the global database connection
 
-    // Prepare SQL to fetch books along with their genres and image data
+    // Prepare SQL to fetch books along wi th their genres and image data
     $stmt = $conn->prepare("
         SELECT b.BookId, b.Title, b.Author, b.Publish_year, b.Available_books, g.Genre, i.ImageData
         FROM book b
