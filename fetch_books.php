@@ -1,4 +1,5 @@
 <?php
+include 'databaseFunctions.php';
 
 header('Content-Type: application/json'); // Ensure the response is JSON
 

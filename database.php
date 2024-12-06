@@ -25,12 +25,14 @@ $tables = [
     )",
     // Book table
     "CREATE TABLE IF NOT EXISTS book (
-        BookId INT AUTO_INCREMENT PRIMARY KEY,
-        Title VARCHAR(50),
-        Author VARCHAR(20),
-        Publish_year DATE,
-        Available_books INT
-    )",
+    BookId INT AUTO_INCREMENT PRIMARY KEY,
+    Title VARCHAR(50),
+    Author VARCHAR(20),
+    BookDescription VARCHAR(2000),
+    Publish_year DATE,
+    Available_books INT
+    );
+    ",
     // Rules table
     "CREATE TABLE IF NOT EXISTS rules (
         RuleId INT AUTO_INCREMENT PRIMARY KEY,
@@ -39,7 +41,7 @@ $tables = [
     // Genres table
     "CREATE TABLE IF NOT EXISTS genres (
         GenreId INT AUTO_INCREMENT PRIMARY KEY,
-        Genre VARCHAR(20) 
+        Genre VARCHAR(30) 
     )",
     // // UserSession table
     // "CREATE TABLE IF NOT EXISTS user_session (
@@ -82,7 +84,6 @@ $tables = [
         FOREIGN KEY (UserId) REFERENCES user(UserId),
         FOREIGN KEY (BookId) REFERENCES book(BookId)
     )"
-
 ];
 
 foreach ($tables as $table_sql) {
@@ -131,18 +132,112 @@ foreach ($genres as $genre) {
     }
 }
 
-
-// Insert books and link them to genres
 $books = [
-    ["Title" => "The Great Gatsby", "Author" => "F. Scott Fitzgerald", "Publish_year" => "1925-04-10", "Available_books" => 5, "Genre" => "Fiction"],
-    ["Title" => "1984", "Author" => "George Orwell", "Publish_year" => "1949-06-08", "Available_books" => 3, "Genre" => "Science"],
-    ["Title" => "To Kill a Mockingbird", "Author" => "Harper Lee", "Publish_year" => "1960-07-11", "Available_books" => 4, "Genre" => "Fiction"],
+    [
+        "Title" => "The Catcher in the Rye",
+        "Author" => "J.D. Salinger",
+        "Publish_year" => "1951-07-16",
+        "Available_books" => 6,
+        "Genre" => "Fiction",
+        "Description" => "A story of teenage rebellion and angst, following the experiences of Holden Caulfield in New York City."
+    ],
+    [
+        "Title" => "Pride and Prejudice",
+        "Author" => "Jane Austen",
+        "Publish_year" => "1813-01-28",
+        "Available_books" => 10,
+        "Genre" => "Romance",
+        "Description" => "A classic novel about love, social standing, and personal growth in 19th-century England."
+    ],
+    [
+        "Title" => "Moby-Dick",
+        "Author" => "Herman Melville",
+        "Publish_year" => "1851-10-18",
+        "Available_books" => 2,
+        "Genre" => "Adventure",
+        "Description" => "An epic tale of obsession and revenge, chronicling Captain Ahab's quest to hunt the white whale, Moby Dick."
+    ],
+    [
+        "Title" => "War and Peace",
+        "Author" => "Leo Tolstoy",
+        "Publish_year" => "1869-01-01",
+        "Available_books" => 3,
+        "Genre" => "Historical",
+        "Description" => "A sweeping narrative that explores the lives of multiple families during the Napoleonic Wars in Russia."
+    ],
+    [
+        "Title" => "The Hobbit",
+        "Author" => "J.R.R. Tolkien",
+        "Publish_year" => "1937-09-21",
+        "Available_books" => 8,
+        "Genre" => "Fantasy",
+        "Description" => "A fantasy adventure about Bilbo Baggins, a hobbit who embarks on a quest to reclaim treasure guarded by a dragon."
+    ],
+    [
+        "Title" => "The Road",
+        "Author" => "Cormac McCarthy",
+        "Publish_year" => "2006-09-26",
+        "Available_books" => 4,
+        "Genre" => "Post-apocalyptic",
+        "Description" => "A haunting story of survival and love between a father and son journeying through a devastated world."
+    ],
+    [
+        "Title" => "Brave New World",
+        "Author" => "Aldous Huxley",
+        "Publish_year" => "1932-08-18",
+        "Available_books" => 5,
+        "Genre" => "Science",
+        "Description" => "A dystopian vision of the future that critiques technological advancements and societal control."
+    ],
+    [
+        "Title" => "Crime and Punishment",
+        "Author" => "Fyodor Dostoevsky",
+        "Publish_year" => "1866-01-01",
+        "Available_books" => 3,
+        "Genre" => "Philosophical Fiction",
+        "Description" => "A psychological drama about guilt and redemption, centering on a young man who commits a murder."
+    ],
+    [
+        "Title" => "The Alchemist",
+        "Author" => "Paulo Coelho",
+        "Publish_year" => "1988-01-01",
+        "Available_books" => 7,
+        "Genre" => "Fiction",
+        "Description" => "A magical fable about following your dreams, featuring the journey of Santiago, an Andalusian shepherd."
+    ],
+    [
+        "Title" => "Jane Eyre",
+        "Author" => "Charlotte Brontë",
+        "Publish_year" => "1847-10-16",
+        "Available_books" => 5,
+        "Genre" => "Romance",
+        "Description" => "The story of a young governess who falls in love with her mysterious employer, uncovering dark secrets."
+    ],
+    [
+        "Title" => "The Count of Monte Cristo",
+        "Author" => "Alexandre Dumas",
+        "Publish_year" => "1844-01-01",
+        "Available_books" => 4,
+        "Genre" => "Adventure",
+        "Description" => "An epic tale of betrayal, revenge, and redemption, following the life of Edmond Dantès."
+    ],
+    [
+        "Title" => "Frankenstein",
+        "Author" => "Mary Shelley",
+        "Publish_year" => "1818-01-01",
+        "Available_books" => 6,
+        "Genre" => "Horror",
+        "Description" => "A gothic novel about a scientist who creates life, only to face devastating consequences."
+    ],
 ];
 
 foreach ($books as $book) {
-    // Insert the book
-    $sql = "INSERT INTO book (Title, Author, Publish_year, Available_books) 
-            VALUES ('{$book['Title']}', '{$book['Author']}', '{$book['Publish_year']}', {$book['Available_books']})";
+    // Escape special characters in the description
+    $escapedDescription = $conn->real_escape_string($book['Description']);
+
+    // Insert the book with escaped description
+    $sql = "INSERT INTO book (Title, Author, BookDescription, Publish_year, Available_books) 
+            VALUES ('{$book['Title']}', '{$book['Author']}', '{$escapedDescription}', '{$book['Publish_year']}', {$book['Available_books']})";
     if ($conn->query($sql) === TRUE) {
         $bookId = $conn->insert_id; // Get the new BookId
 

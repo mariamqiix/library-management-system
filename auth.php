@@ -40,15 +40,35 @@ function login()
             echo "<p>The username you entered is incorrect.</p>";
         }
     } else {
-        echo "<h1>Login</h1>";
-        echo "<form method='post'>";
-        echo "<label for='username'>Username:</label><br>";
-        echo "<input type='text' id='username' name='username'><br>";
-        echo "<label for='password'>Password:</label><br>";
-        echo "<input type='password' id='password' name='password'><br>";
-        echo "<input type='submit' value='Login'>";
+        echo "<form class='form_container' method='post'>";
+        echo "<div class='logo_container'></div>";
+        echo "<div class='title_container'>";
+        echo "<p class='title'>Login to your Account</p>";
+        echo "<span class='subtitle'>Get started with our app, just create an account and enjoy the experience.</span>";
+        echo "</div>";
+
+        echo "<div class='input_container'>";
+        echo "<label class='input_label' for='username'>Username</label>";
+        echo "<input placeholder='name@mail.com' title='Inpit title' name='username' type='text' class='input_field' id='username'>";
+        echo "</div>";
+
+        echo "<div class='input_container'>";
+        echo "<label class='input_label' for='password'>Password</label>";
+        echo "<input placeholder='Password' title='Inpit title' name='password' type='password' class='input_field' id='password'>";
+        echo "</div>";
+
+        echo "<button title='Login' type='submit' class='sign-in_btn'>";
+        echo "<span>Sign In</span>";
+        echo "</button>";
+
+        echo "<div class='separator'>";
+        echo "<hr class='line'>";
+        echo "<span>or</span>";
+        echo "</div>";
+
+        echo "<p><a href='home.php?page=register' class='register-link'>Register</a></p>";
         echo "</form>";
-        echo '<p><a href="home.php?page=register">Register</a></p>';
+
     }
 }
 
@@ -63,7 +83,6 @@ function createUserSession($userId, $username, $rule)
     // Set a cookie with the username (expires in 1 hour)
     setcookie("username", $username, time() + 3600, "/"); // "/" means available across the entire site
     setcookie("rule", GetUserRule($username), time() + 3600, "/"); // "/" means available across the entire site
-
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -76,32 +95,65 @@ function register()
     global $conn; // Ensure access to the database connection
 
     // Render the form
-    echo "<h1>Register</h1>";
+    echo "<form class='form_container' method='post' enctype='multipart/form-data' id='register-form'>";
 
-    // Start form with enctype for file upload
-    echo "<form method='post' id='register-form' enctype='multipart/form-data'>";
-    echo "<label for='username'>Username:</label><br>";
-    echo "<input type='text' id='username' name='username'><br>";
-    echo "<label for='first_name'>First Name:</label><br>";
-    echo "<input type='text' id='first_name' name='first_name'><br>";
-    echo "<label for='last_name'>Last Name:</label><br>";
-    echo "<input type='text' id='last_name' name='last_name'><br>";
-    echo "<label for='email'>Email:</label><br>";
-    echo "<input type='email' id='email' name='email'><br>";
-    echo "<label for='password'>Password:</label><br>";
-    echo "<input type='password' id='password' name='password'><br>";
-    echo "<label for='confirm_password'>Confirm Password:</label><br>";
-    echo "<input type='password' id='confirm_password' name='confirm_password'><br>";
+    echo "<div class='logo_container'></div>";
 
-    // Add file input for image upload
-    echo "<label for='profile_image'>Profile Image:</label><br>";
-    echo "<input type='file' id='profile_image' name='profile_image'><br>";
+    echo "<div class='title_container'>";
+    echo "<p class='title'>Create Your Account</p>";
+    echo "<span class='subtitle'>Sign up to enjoy our features and be part of the community.</span>";
+    echo "</div>";
 
-    echo "<input type='submit' value='Register'>";
+    echo "<div class='input_container'>";
+    echo "<label class='input_label' for='username'>Username</label>";
+    echo "<input placeholder='Choose a username' title='Input title' name='username' type='text' class='input_field' id='username'>";
+    echo "</div>";
+
+    echo "<div class='input_container'>";
+    echo "<label class='input_label' for='first_name'>First Name</label>";
+    echo "<input placeholder='John' title='Input title' name='first_name' type='text' class='input_field' id='first_name'>";
+    echo "</div>";
+
+    echo "<div class='input_container'>";
+    echo "<label class='input_label' for='last_name'>Last Name</label>";
+    echo "<input placeholder='Doe' title='Input title' name='last_name' type='text' class='input_field' id='last_name'>";
+    echo "</div>";
+
+    echo "<div class='input_container'>";
+    echo "<label class='input_label' for='email'>Email</label>";
+    echo "<input placeholder='name@mail.com' title='Input title' name='email' type='email' class='input_field' id='email'>";
+    echo "</div>";
+
+    echo "<div class='input_container'>";
+    echo "<label class='input_label' for='password'>Password</label>";
+    echo "<input placeholder='Password' title='Input title' name='password' type='password' class='input_field' id='password'>";
+    echo "</div>";
+
+    echo "<div class='input_container'>";
+    echo "<label class='input_label' for='confirm_password'>Confirm Password</label>";
+    echo "<input placeholder='Confirm password' title='Input title' name='confirm_password' type='password' class='input_field' id='confirm_password'>";
+    echo "</div>";
+
+    echo "<div class='input_container'>";
+    echo "<label class='input_label' for='profile_image'>Profile Image</label>";
+    echo "<input type='file' name='profile_image' class='input_field' id='profile_image'>";
+    echo "</div>";
+
+    echo "<button title='Register' type='submit' class='sign-in_btn'>";
+    echo "<span>Register</span>";
+    echo "</button>";
+
+    echo "<div class='separator'>";
+    echo "<hr class='line'>";
+    echo "<span>or</span>";
+    echo "</div>";
+
+    echo "<p><a href='home.php?page=login' class='register-link'>Login</a></p>";
+
     echo "</form>";
-    echo '<p><a href="home.php?page=login">Login</a></p>';
 
     echo "<p id='error-message' style='color:red;'></p>";
+
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Collect form inputs

@@ -133,33 +133,52 @@ function updateBookPost($data)
 <!DOCTYPE html>
 <html lang="en">
 <link rel="stylesheet" href="style.css">
+
 <head>
   <meta charset="UTF-8">
   <title>Library Management System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
 </head>
 
 <body>
-  <div class="navbar">
+  <!-- Top Navigation Bar -->
+<div class="top-navbar">
+    <div class="logo">
+    </div>
+    <div class="search-container">
+        <form action="?page=search" method="GET">
+            <input type="text" name="query" id="searchInput" placeholder="Search for books, authors..." required>
+            <button type="submit" id="searchButton">Search</button>
+        </form>
+    </div>
+</div>
+
+<div class="navbar">
     <!-- Navigation bar links -->
-    <a href="?page=home" class="<?= $page === 'home' ? 'active' : '' ?>">Home</a>
-    <a href="?page=All Books" class="<?= $page === 'All Books' ? 'active' : '' ?>">All Books</a>
-    <a href="?page=genres" class="<?= $page === 'genres' ? 'active' : '' ?>">Genres</a>
+    <a href="?page=home" class="<?= $page === 'home' ? 'active' : '' ?>">
+        <i class="fa fa-home"></i> <span>Home</span>
+    </a>
+    <a href="?page=All Books" class="<?= $page === 'All Books' ? 'active' : '' ?>">
+        <i class="fa fa-book"></i> <span>All Books</span>
+    </a>
+    <a href="?page=genres" class="<?= $page === 'genres' ? 'active' : '' ?>">
+        <i class="fa fa-tags"></i> <span>Genres</span>
+    </a>
     <?php
     session_start();
     if ((isset($_SESSION['user_id']) || isset($_COOKIE['username'])) && $_SESSION['rule'] == 'Admin') {
-      echo '<a href="?page=Adminstration" class="' . ($page === 'Adminstration' ? 'active' : '') . '">Adminstration</a>';
-      echo '<a href="?page=libraryHistory" class="' . ($page === 'libraryHistory' ? 'active' : '') . '">libraryHistory</a>';
-
+      echo '<a href="?page=Adminstration" class="' . ($page === 'Adminstration' ? 'active' : '') . '"><i class="fa fa-cogs"></i> <span>Adminstration</span></a>';
+      echo '<a href="?page=libraryHistory" class="' . ($page === 'libraryHistory' ? 'active' : '') . '"><i class="fa fa-history"></i> <span>Library History</span></a>';
     }
     if (isset($_SESSION['user_id']) || isset($_COOKIE['username'])) {
-      echo '<a href="?page=MyLibrary" class="' . ($page === 'MyLibrary' ? 'active' : '') . '">MyLibrary</a>';
-      echo '<a href="?page=logout" class="' . ($page === 'logout' ? 'active' : '') . '">Logout</a>';
+      echo '<a href="?page=MyLibrary" class="' . ($page === 'MyLibrary' ? 'active' : '') . '"><i class="fa fa-bookmark"></i> <span>My Library</span></a>';
+      echo '<a href="?page=logout" class="' . ($page === 'logout' ? 'active' : '') . '"><i class="fa fa-sign-out"></i> <span>Logout</span></a>';
     } else {
-      echo '<a href="?page=login" class="' . ($page === 'login' ? 'active' : '') . '">Login</a>';
+      echo '<a href="?page=login" class="' . ($page === 'login' ? 'active' : '') . '"><i class="fa fa-sign-in"></i> <span>Login</span></a>';
     }
     ?>
-  </div>
+</div>
 
   <div class="content">
     <?php
@@ -169,38 +188,61 @@ function updateBookPost($data)
 
     // Display content based on the selected page
     if ($page === 'home') {
-      echo "<h1>Welcome to the Home Page</h1>";
       $books = GetAllBooks();
 
       if (!empty($books)) {
-        echo "<ul id='bookList'>";
-        foreach ($books as $book) {
-          echo "<li class='book-item' onclick='showBookDetails(" . json_encode($book) . ")'>";
-          echo "<strong>Title:</strong> " . htmlspecialchars($book->Title) . "<br>";
-          echo "<strong>Author:</strong> " . htmlspecialchars($book->Author) . "<br>";
-          echo "<strong>Publish Year:</strong> " . htmlspecialchars($book->PublishYear) . "<br>";
-          echo "<strong>Available Copies:</strong> " . htmlspecialchars($book->AvailableBooks) . "<br>";
-          echo "<strong>Genre:</strong> " . htmlspecialchars($book->Genre);
-          echo "</li>";
+        if (!empty($books)) {
+          echo '<div class="book-list-container">';
+          echo '<h2>Recommended</h2>';
+          echo '<a href="?page=All Books" class="' . ($page === 'All Books' ? 'active' : '') . '">See All &rsaquo;</a>';
+          echo '<div class="book-list">';
+
+          foreach ($books as $book) {
+            echo '<div class="book-item" onclick=\'showBookDetails(' . json_encode($book) . ')\'>';
+            echo '<img src="data:image/jpeg;base64,' . htmlspecialchars($book->Image) . '" alt="Book Cover">';
+            echo '<div class="book-details">';
+            echo '<div class="book-title">' . htmlspecialchars($book->Title) . '</div>';
+            echo '<div class="book-author">' . htmlspecialchars($book->Author) . '</div>';
+            echo '</div>';
+            echo '</div>';
+          }
+          echo '</div>';
+          echo '</div>';
+
+
+        } else {
+          echo "<p>No books available at the moment.</p>";
         }
-        echo "</ul>";
+        
+        echo '<div class="book-list-container" id="genre-1-books-container">';
+        echo '<h2>Fiction Books</h2>';
+        echo '<a href="?page=genres" class="' . ($page === 'genres' ? 'active' : '') . '">See All Geners &rsaquo;</a>';
+        echo '<div class="book-list" id="genre-1-books">';
+        echo '</div>';
+        echo '</div>';
+
       } else {
         echo "<p>No books available at the moment.</p>";
       }
     } elseif ($page === 'All Books') {
       $books = GetAllBooks();
       if (!empty($books)) {
-        echo "<ul id='bookList'>";
+        echo '<div class="all-books-container">';
+        echo '<h2>All Books</h2>';
+        echo '<div class="book-grid">';
+
         foreach ($books as $book) {
-          echo "<li class='book-item' onclick='showBookDetails(" . json_encode($book) . ")'>";
-          echo "<strong>Title:</strong> " . htmlspecialchars($book->Title) . "<br>";
-          echo "<strong>Author:</strong> " . htmlspecialchars($book->Author) . "<br>";
-          echo "<strong>Publish Year:</strong> " . htmlspecialchars($book->PublishYear) . "<br>";
-          echo "<strong>Available Copies:</strong> " . htmlspecialchars($book->AvailableBooks) . "<br>";
-          echo "<strong>Genre:</strong> " . htmlspecialchars($book->Genre);
-          echo "</li>";
+          echo '<div class="book-item" onclick=\'showBookDetails(' . json_encode($book) . ')\'>';
+          echo '<img src="data:image/jpeg;base64,' . htmlspecialchars($book->Image) . '" alt="Book Cover">';
+          echo '<div class="book-details">';
+          echo '<div class="book-title">' . htmlspecialchars($book->Title) . '</div>';
+          echo '<div class="book-author">' . htmlspecialchars($book->Author) . '</div>';
+          echo '</div>';
+          echo '</div>';
         }
-        echo "</ul>";
+
+        echo '</div>';
+        echo '</div>';
       } else {
         echo "<p>No books available at the moment.</p>";
       }
@@ -253,8 +295,8 @@ function updateBookPost($data)
     } elseif ($page === 'libraryHistory') {
       $history = borrowHistory();
       if (!empty($history)) {
-          echo '<table border="1" cellpadding="10">';
-          echo '<tr>
+        echo '<table border="1" cellpadding="10">';
+        echo '<tr>
                   <th>User ID</th>
                   <th>Username</th>
                   <th>First Name</th>
@@ -268,25 +310,25 @@ function updateBookPost($data)
                   <th>Borrow Date</th>
                   <th>Return Date</th>
                 </tr>';
-          foreach ($history as $entry) {
-              echo '<tr>';
-              echo '<td>' . $entry->userDetails->userId . '</td>';
-              echo '<td>' . $entry->userDetails->username . '</td>';
-              echo '<td>' . $entry->userDetails->firstName . '</td>';
-              echo '<td>' . $entry->userDetails->lastName . '</td>';
-              echo '<td>' . $entry->userDetails->email . '</td>';
-              echo '<td>' . $entry->bookDetails->bookTitle . '</td>';
-              echo '<td>' . $entry->bookDetails->bookAuthor . '</td>';
-              echo '<td>' . $entry->bookDetails->bookGenre . '</td>';
-              echo '<td>' . $entry->bookDetails->publishYear . '</td>';
-              echo '<td>' . $entry->bookDetails->availableBooks . '</td>';
-              echo '<td>' . $entry->bookDetails->borrowDate . '</td>';
-              echo '<td>' . $entry->bookDetails->returnDate . '</td>';
-              echo '</tr>';
-          }
-          echo '</table>';
+        foreach ($history as $entry) {
+          echo '<tr>';
+          echo '<td>' . $entry->userDetails->userId . '</td>';
+          echo '<td>' . $entry->userDetails->username . '</td>';
+          echo '<td>' . $entry->userDetails->firstName . '</td>';
+          echo '<td>' . $entry->userDetails->lastName . '</td>';
+          echo '<td>' . $entry->userDetails->email . '</td>';
+          echo '<td>' . $entry->bookDetails->bookTitle . '</td>';
+          echo '<td>' . $entry->bookDetails->bookAuthor . '</td>';
+          echo '<td>' . $entry->bookDetails->bookGenre . '</td>';
+          echo '<td>' . $entry->bookDetails->publishYear . '</td>';
+          echo '<td>' . $entry->bookDetails->availableBooks . '</td>';
+          echo '<td>' . $entry->bookDetails->borrowDate . '</td>';
+          echo '<td>' . $entry->bookDetails->returnDate . '</td>';
+          echo '</tr>';
+        }
+        echo '</table>';
       } else {
-          echo "<h1>No history available</h1>";
+        echo "<h1>No history available</h1>";
       }
     } else {
       echo "<h1>Page Not Found</h1>";
@@ -296,14 +338,18 @@ function updateBookPost($data)
   </div>
   <div id="bookDetailsSidebar" class="sidebar">
     <button class="close-btn" onclick="closeSidebar()">×</button>
-    <img id="bookImage" src="" alt="Book Cover">
-    <h2 id="bookTitle"></h2>
-    <p><strong>Author:</strong> <span id="bookAuthor"></span></p>
-    <p><strong>Publish Year:</strong> <span id="bookPublishYear"></span></p>
-    <p><strong>Genre:</strong> <span id="bookGenre"></span></p>
-    <p><strong>Available Copies:</strong> <span id="bookCopies"></span></p>
+    <img id="bookImage" src="" alt="Book Cover" class="book-image">
+    <h2 id="bookTitle" class="book-title"></h2>
+    <p id="bookAuthor" class="book-author"></p> <!-- Added author field -->
+    <div class="book-info">
+      <p><strong>Date of Publish:</strong> <span id="bookPublishYear"></span></p>
+      <p><strong>Available Copies:</strong> <span id="bookCopies"></span></p>
+      <p><strong>Genre:</strong> <span id="bookGenre"></span></p>
+      <p><strong>Description:</strong> <span id="bookDescription"></span></p>
+    </div>
     <button id="borrowButton" onclick="borrowSelectedBook()">Borrow</button>
   </div>
+
   <!-- ADD BOOK Popup -->
   <div id="addBook" style="display: none;">
     <h2>Add a New Book</h2>
@@ -582,40 +628,46 @@ function updateBookPost($data)
     populateBookSelect();
   };
   let selectedBook = null;
-
   function showBookDetails(book) {
     selectedBook = book.BookId;
 
-    // Populate sidebar with book details
-    // If `book.Image` is Base64-encoded, you can directly use it as the src for an image
-    let imageUrl = 'data:image/jpeg;base64,' + book.Image; // Adjust the MIME type accordingly (e.g., image/png, image/jpeg, etc.)
+    // Set image source (handling Base64 image encoding)
+    let imageUrl = 'data:image/jpeg;base64,' + book.Image;
+    document.getElementById('bookImage').src = imageUrl;
 
-    // Set the image source to the image URL
-    document.getElementById('bookImage').src = imageUrl; document.getElementById('bookTitle').innerText = book.Title;
-    document.getElementById('bookAuthor').innerText = book.Author;
-    // Check if PublishYear is null and use Publish_year instead
+    // Set book title, author, and other details
+    document.getElementById('bookTitle').innerText = book.Title;
+    document.getElementById('bookAuthor').innerText = book.Author; // Populate author
+
+    // Set publish year
     document.getElementById('bookPublishYear').innerText = book.PublishYear || book.Publish_year;
 
-    // Check if AvailableBooks is null and use Available_books instead
+    // Set available copies
     document.getElementById('bookCopies').innerText = book.AvailableBooks || book.Available_books;
+
+    // Set genre
     document.getElementById('bookGenre').innerText = book.Genre;
 
-    // Set borrow button state
+    // Set description
+    document.getElementById('bookDescription').innerText = book.Description || "No description available.";
+
+    // Enable or disable borrow button
     const borrowButton = document.getElementById('borrowButton');
-    if (book.AvailableBooks > 0) {
-      borrowButton.disabled = false;
+    if (book.AvailableBooks > 0 || book.Available_books > 0) {
+        borrowButton.disabled = false;
     } else {
-      borrowButton.disabled = true;
+        borrowButton.disabled = true;
     }
 
-    // Show sidebar
-    document.getElementById('bookDetailsSidebar').style.display = 'block';
-  }
+    // Show the sidebar
+    document.getElementById('bookDetailsSidebar').classList.add('active');
+}
 
-  function closeSidebar() {
-    document.getElementById('bookDetailsSidebar').style.display = 'none';
+function closeSidebar() {
+    document.getElementById('bookDetailsSidebar').classList.remove('active');
     selectedBook = null;
-  }
+}
+
 
   function borrowSelectedBook() {
     const userId = '<?php echo isset($_COOKIE['username']) ? $_COOKIE['username'] : null; ?>';
@@ -646,6 +698,67 @@ function updateBookPost($data)
     xhr.send(params);
   }
 
+
+
+  fetch('fetch_books.php?genreId=1')
+            .then(response => {
+                console.log('Raw response:', response); // Log raw response
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    console.error('Invalid response type:', contentType);
+                    return response.text().then(text => { throw new Error(`Response was not JSON: ${text}`); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Get the genre 1 books container
+                const container = document.getElementById('genre-1-books');
+                console.log('Raw response:', data); // Log raw response
+
+                // Check if books exist
+                if (data && data.length > 0) {
+                    data.forEach(book => {
+                        // Create a book item and insert it into the container
+                        const bookItem = document.createElement('div');
+                        bookItem.classList.add('book-item');
+                        bookItem.onclick = () => showBookDetails(book); // Assuming showBookDetails is a JS function
+
+                        const bookImage = document.createElement('img');
+                        bookImage.src = 'data:image/jpeg;base64,' + book.Image;
+                        bookImage.alt = 'Book Cover';
+
+                        const bookDetails = document.createElement('div');
+                        bookDetails.classList.add('book-details');
+
+                        const bookTitle = document.createElement('div');
+                        bookTitle.classList.add('book-title');
+                        bookTitle.textContent = book.Title;
+
+                        const bookAuthor = document.createElement('div');
+                        bookAuthor.classList.add('book-author');
+                        bookAuthor.textContent = book.Author;
+
+                        bookDetails.appendChild(bookTitle);
+                        bookDetails.appendChild(bookAuthor);
+                        bookItem.appendChild(bookImage);
+                        bookItem.appendChild(bookDetails);
+
+                        container.appendChild(bookItem);
+                    });
+                } else {
+                    container.innerHTML = '<p>No books available for this genre.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching books:', error);
+            });
 </script>
 
 
