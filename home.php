@@ -143,27 +143,27 @@ function updateBookPost($data)
 
 <body>
   <!-- Top Navigation Bar -->
-<div class="top-navbar">
+  <div class="top-navbar">
     <div class="logo">
     </div>
-    <div class="search-container">
-        <form action="?page=search" method="GET">
-            <input type="text" name="query" id="searchInput" placeholder="Search for books, authors..." required>
-            <button type="submit" id="searchButton">Search</button>
-        </form>
+    <div class="custom-search-container">
+      <form action="?page=search" method="POST" id="customSearch">
+        <input type="text" name="query" id="customSearchInput" placeholder="Search for books, authors..." required>
+        <button type="submit" id="customSearchButton">Search</button>
+      </form>
     </div>
-</div>
+  </div>
 
-<div class="navbar">
+  <div class="navbar">
     <!-- Navigation bar links -->
     <a href="?page=home" class="<?= $page === 'home' ? 'active' : '' ?>">
-        <i class="fa fa-home"></i> <span>Home</span>
+      <i class="fa fa-home"></i> <span>Home</span>
     </a>
     <a href="?page=All Books" class="<?= $page === 'All Books' ? 'active' : '' ?>">
-        <i class="fa fa-book"></i> <span>All Books</span>
+      <i class="fa fa-book"></i> <span>All Books</span>
     </a>
     <a href="?page=genres" class="<?= $page === 'genres' ? 'active' : '' ?>">
-        <i class="fa fa-tags"></i> <span>Genres</span>
+      <i class="fa fa-tags"></i> <span>Genres</span>
     </a>
     <?php
     session_start();
@@ -178,7 +178,7 @@ function updateBookPost($data)
       echo '<a href="?page=login" class="' . ($page === 'login' ? 'active' : '') . '"><i class="fa fa-sign-in"></i> <span>Login</span></a>';
     }
     ?>
-</div>
+  </div>
 
   <div class="content">
     <?php
@@ -213,7 +213,7 @@ function updateBookPost($data)
         } else {
           echo "<p>No books available at the moment.</p>";
         }
-        
+
         echo '<div class="book-list-container" id="genre-1-books-container">';
         echo '<h2>Fiction Books</h2>';
         echo '<a href="?page=genres" class="' . ($page === 'genres' ? 'active' : '') . '">See All Geners &rsaquo;</a>';
@@ -283,14 +283,20 @@ function updateBookPost($data)
 
     } elseif ($page === 'login') {
       login();
+    } elseif ($page === 'search') {
+      include 'search.php'; //
     } elseif ($page === 'register') {
       register();
     } elseif ($page === 'logout') {
       logout();
     } elseif ($page === 'Adminstration') {
-      echo "<h1 onclick=\"showPopUp('addBook')\">ADD BOOK</h1>";
-      echo "<h1 onclick=\"showPopUp('updateBook')\">UPDATE BOOK</h1>";
-      echo "<h1 onclick=\"showPopUp('registerUser')\">REGISTER USER</h1>";
+      echo '<div class="admin-options">';
+      echo '<ul class="options-list">';
+      echo '<li onclick="showPopUp(\'addBook\')">ADD BOOK</li>';
+      echo '<li onclick="showPopUp(\'updateBook\')">UPDATE BOOK</li>';
+      echo '<li onclick="showPopUp(\'registerUser\')">REGISTER USER</li>';
+      echo '</ul>';
+      echo '</div>';
 
     } elseif ($page === 'libraryHistory') {
       $history = borrowHistory();
@@ -654,19 +660,19 @@ function updateBookPost($data)
     // Enable or disable borrow button
     const borrowButton = document.getElementById('borrowButton');
     if (book.AvailableBooks > 0 || book.Available_books > 0) {
-        borrowButton.disabled = false;
+      borrowButton.disabled = false;
     } else {
-        borrowButton.disabled = true;
+      borrowButton.disabled = true;
     }
 
     // Show the sidebar
     document.getElementById('bookDetailsSidebar').classList.add('active');
-}
+  }
 
-function closeSidebar() {
+  function closeSidebar() {
     document.getElementById('bookDetailsSidebar').classList.remove('active');
     selectedBook = null;
-}
+  }
 
 
   function borrowSelectedBook() {
@@ -701,64 +707,64 @@ function closeSidebar() {
 
 
   fetch('fetch_books.php?genreId=1')
-            .then(response => {
-                console.log('Raw response:', response); // Log raw response
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const contentType = response.headers.get("content-type");
-                if (!contentType || !contentType.includes("application/json")) {
-                    console.error('Invalid response type:', contentType);
-                    return response.text().then(text => { throw new Error(`Response was not JSON: ${text}`); });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.error) {
-                    throw new Error(data.error);
-                }
+    .then(response => {
+      console.log('Raw response:', response); // Log raw response
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        console.error('Invalid response type:', contentType);
+        return response.text().then(text => { throw new Error(`Response was not JSON: ${text}`); });
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
-                // Get the genre 1 books container
-                const container = document.getElementById('genre-1-books');
-                console.log('Raw response:', data); // Log raw response
+      // Get the genre 1 books container
+      const container = document.getElementById('genre-1-books');
+      console.log('Raw response:', data); // Log raw response
 
-                // Check if books exist
-                if (data && data.length > 0) {
-                    data.forEach(book => {
-                        // Create a book item and insert it into the container
-                        const bookItem = document.createElement('div');
-                        bookItem.classList.add('book-item');
-                        bookItem.onclick = () => showBookDetails(book); // Assuming showBookDetails is a JS function
+      // Check if books exist
+      if (data && data.length > 0) {
+        data.forEach(book => {
+          // Create a book item and insert it into the container
+          const bookItem = document.createElement('div');
+          bookItem.classList.add('book-item');
+          bookItem.onclick = () => showBookDetails(book); // Assuming showBookDetails is a JS function
 
-                        const bookImage = document.createElement('img');
-                        bookImage.src = 'data:image/jpeg;base64,' + book.Image;
-                        bookImage.alt = 'Book Cover';
+          const bookImage = document.createElement('img');
+          bookImage.src = 'data:image/jpeg;base64,' + book.Image;
+          bookImage.alt = 'Book Cover';
 
-                        const bookDetails = document.createElement('div');
-                        bookDetails.classList.add('book-details');
+          const bookDetails = document.createElement('div');
+          bookDetails.classList.add('book-details');
 
-                        const bookTitle = document.createElement('div');
-                        bookTitle.classList.add('book-title');
-                        bookTitle.textContent = book.Title;
+          const bookTitle = document.createElement('div');
+          bookTitle.classList.add('book-title');
+          bookTitle.textContent = book.Title;
 
-                        const bookAuthor = document.createElement('div');
-                        bookAuthor.classList.add('book-author');
-                        bookAuthor.textContent = book.Author;
+          const bookAuthor = document.createElement('div');
+          bookAuthor.classList.add('book-author');
+          bookAuthor.textContent = book.Author;
 
-                        bookDetails.appendChild(bookTitle);
-                        bookDetails.appendChild(bookAuthor);
-                        bookItem.appendChild(bookImage);
-                        bookItem.appendChild(bookDetails);
+          bookDetails.appendChild(bookTitle);
+          bookDetails.appendChild(bookAuthor);
+          bookItem.appendChild(bookImage);
+          bookItem.appendChild(bookDetails);
 
-                        container.appendChild(bookItem);
-                    });
-                } else {
-                    container.innerHTML = '<p>No books available for this genre.</p>';
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching books:', error);
-            });
+          container.appendChild(bookItem);
+        });
+      } else {
+        container.innerHTML = '<p>No books available for this genre.</p>';
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching books:', error);
+    });
 </script>
 
 

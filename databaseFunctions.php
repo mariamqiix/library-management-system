@@ -10,7 +10,6 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
-
 function searchBooks($searchString)
 {
     global $conn;
@@ -19,29 +18,61 @@ function searchBooks($searchString)
 
     // SQL query to search for books by title, author, or genre
     $sql = "
-        SELECT b.BookId, b.Title, b.Author, g.Genre
-        FROM book b
-        LEFT JOIN book_genre bg ON b.BookId = bg.BookId
-        LEFT JOIN genres g ON bg.GenreId = g.GenreId
-        WHERE b.Title LIKE '%$searchString%' 
-        OR b.Author LIKE '%$searchString%' 
-        OR g.Genre LIKE '%$searchString%'
+        SELECT 
+            b.BookId, 
+            b.Title, 
+            b.Author, 
+            b.Publish_year, 
+            b.Available_books, 
+            g.Genre, 
+            i.ImageData
+        FROM 
+            book b
+        LEFT JOIN 
+            book_genre bg ON b.BookId = bg.BookId
+        LEFT JOIN 
+            genres g ON bg.GenreId = g.GenreId
+        LEFT JOIN 
+            ImagesToUsersAndBooks ibu ON b.BookId = ibu.BookId
+        LEFT JOIN 
+            ImagesTable i ON ibu.ImageId = i.ImageId
+        WHERE 
+            b.Title LIKE '%$searchString%' 
+        OR 
+            b.Author LIKE '%$searchString%' 
+        OR 
+            g.Genre LIKE '%$searchString%'
     ";
 
     $result = $conn->query($sql);
 
-    // Check if there are results
+    // Initialize an array to hold the book objects
     $books = [];
+
+    // Check if the query returned any rows
     if ($result->num_rows > 0) {
-        // Fetch all results into an array
+        // Loop through each row in the result set
         while ($row = $result->fetch_assoc()) {
-            $books[] = $row;
+            // Create a new book object for each row with all details
+            $book = (object) [
+                'BookId' => $row['BookId'],
+                'Title' => $row['Title'],
+                'Author' => $row['Author'],
+                'PublishYear' => $row['Publish_year'],
+                'AvailableBooks' => $row['Available_books'],
+                'Genre' => $row['Genre'],
+                'Image' => base64_encode($row['ImageData']) // Convert binary image data to base64 string
+            ];
+
+            // Add the book object to the books array
+            $books[] = $book;
         }
     }
 
-    // Return the array of books (could be empty if no results)
+    // Return the array of book objects (could be empty if no results)
     return $books;
 }
+
 
 function CreatetUser($username, $firstName, $lastName, $password, $email, $rule = 'User', $imageId = 2)
 {
