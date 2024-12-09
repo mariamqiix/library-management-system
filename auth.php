@@ -2,76 +2,80 @@
 
 function login()
 {
+    // Variable to store error messages
+    $error = '';
+
+    // Check if the form was submitted
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $username = $_POST['username'];
-        $loginPassword = $_POST['password'];
-        $userBoolean = checkUser("Username", $username);
-        echo $userBoolean;
-        if ($userBoolean) {
-            $password = GetPassword("Username", $username);
-            if (password_verify($loginPassword, $password)) {
-                $user = GetUser("Username", $username);
-                // echo "<h1>Welcome, " . htmlspecialchars($user['Username']) . "</h1>";
-                // echo "<p>You have successfully logged in.</p>";
-                createUserSession($user['Username'], $user['UserId'], $user['Rule']);
-                header("Location: home.php?page=home");
+        $username = trim($_POST['username'] ?? '');
+        $loginPassword = trim($_POST['password'] ?? '');
 
-            } else {
-                echo "<h1>Invalid Credentials</h1>";
-                echo "<p>The password you entered is incorrect.</p>";
-            }
-        } else if (checkUser("Email", $username)) {
-            $password = GetPassword("Email", $username);
-            if (password_verify($loginPassword, $password)) {
-                // echo "<p>You have successfully logged in.</p>";
-                $user = GetUser(type: "Email", user: $username);
-                // echo "<h1>Welcome, " . htmlspecialchars(string: $user['Title']) . "</h1>";
-                createUserSession($user['Username'], $user['UserId'], $user['Rule']);
-                header("Location: home.php?page=home");
-
-
-            } else {
-                echo "<h1>Invalid Credentials</h1>";
-                echo "<p>The password you entered is incorrect.</p>";
-            }
-
+        // Validate form fields
+        if (empty($username) || empty($loginPassword)) {
+            $error = "Both fields are required.";
         } else {
-            echo "<h1>Invalid Credentials</h1>";
-            echo "<p>The username you entered is incorrect.</p>";
+            // Check if the username is either email or username
+            if (checkUser("Username", $username)) {
+                $password = GetPassword("Username", $username);
+                if (password_verify($loginPassword, $password)) {
+                    $user = GetUser("Username", $username);
+                    createUserSession($user['Username'], $user['UserId'], $user['Rule']);
+                    header("Location: home.php?page=home");
+                    exit;
+                } else {
+                    $error = "The password you entered is incorrect.";
+                }
+            } elseif (checkUser("Email", $username)) {
+                $password = GetPassword("Email", $username);
+                if (password_verify($loginPassword, $password)) {
+                    $user = GetUser("Email", $username);
+                    createUserSession($user['Username'], $user['UserId'], $user['Rule']);
+                    header("Location: home.php?page=home");
+                    exit;
+                } else {
+                    $error = "The password you entered is incorrect.";
+                }
+            } else {
+                $error = "The username or email you entered is incorrect.";
+            }
         }
-    } else {
-        echo "<form class='form_container' method='post'>";
-        echo "<div class='logo_container'></div>";
-        echo "<div class='title_container'>";
-        echo "<p class='title'>Login to your Account</p>";
-        echo "<span class='subtitle'>Get started with our app, just create an account and enjoy the experience.</span>";
-        echo "</div>";
-
-        echo "<div class='input_container'>";
-        echo "<label class='input_label' for='username'>Username</label>";
-        echo "<input placeholder='name@mail.com' title='Inpit title' name='username' type='text' class='input_field' id='username'>";
-        echo "</div>";
-
-        echo "<div class='input_container'>";
-        echo "<label class='input_label' for='password'>Password</label>";
-        echo "<input placeholder='Password' title='Inpit title' name='password' type='password' class='input_field' id='password'>";
-        echo "</div>";
-
-        echo "<button title='Login' type='submit' class='sign-in_btn'>";
-        echo "<span>Sign In</span>";
-        echo "</button>";
-
-        echo "<div class='separator'>";
-        echo "<hr class='line'>";
-        echo "<span>or</span>";
-        echo "</div>";
-
-        echo "<p><a href='home.php?page=register' class='register-link'>Register</a></p>";
-        echo "</form>";
-
     }
-}
 
+    // Render the login form
+    echo "<form class='form_container' method='post'>";
+    echo "<div class='logo_container'></div>";
+    echo "<div class='title_container'>";
+    echo "<p class='title'>Login to your Account</p>";
+    echo "<span class='subtitle'>Get started with our app, just create an account and enjoy the experience.</span>";
+    echo "</div>";
+
+    echo "<div class='input_container'>";
+    echo "<label class='input_label' for='username'>Username</label>";
+    echo "<input placeholder='name@mail.com' title='Input title' name='username' type='text' class='input_field' id='username' value='" . htmlspecialchars($username) . "'>";
+    echo "</div>";
+
+    echo "<div class='input_container'>";
+    echo "<label class='input_label' for='password'>Password</label>";
+    echo "<input placeholder='Password' title='Input title' name='password' type='password' class='input_field' id='password'>";
+    echo "</div>";
+
+    // Display error message if any
+    if ($error) {
+        echo "<p id='error-message' style='color:red;'>$error</p><br>";
+    }
+
+    echo "<button title='Login' type='submit' class='sign-in_btn'>";
+    echo "<span>Sign In</span>";
+    echo "</button>";
+
+    echo "<div class='separator'>";
+    echo "<hr class='line'>";
+    echo "<span>or</span>";
+    echo "</div>";
+
+    echo "<p><a href='home.php?page=register' class='register-link'>Register</a></p>";
+    echo "</form>";
+}
 
 
 function createUserSession($userId, $username, $rule)
@@ -138,6 +142,8 @@ function register()
     echo "<label class='input_label' for='profile_image'>Profile Image</label>";
     echo "<input type='file' name='profile_image' class='input_field' id='profile_image'>";
     echo "</div>";
+    echo "<p id='error-message' style='color:red;'></p><br>";
+
 
     echo "<button title='Register' type='submit' class='sign-in_btn'>";
     echo "<span>Register</span>";
@@ -152,7 +158,6 @@ function register()
 
     echo "</form>";
 
-    echo "<p id='error-message' style='color:red;'></p>";
 
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -173,6 +178,11 @@ function register()
             $error = "All fields are required.";
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error = "Invalid email format.";
+        } 
+        if (checkUser("Username", $username)) {
+            $error = "Username already exists.";
+        } elseif (checkUser("Email", $email)) {
+            $error = "Email already exists.";
         }
         // } elseif (!validatePassword($password)) {
         //     $error = "Password must be 6-12 characters long and include at least one uppercase letter, one lowercase letter, one digit, and one special character.";

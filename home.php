@@ -237,6 +237,7 @@ function updateBookPost($data)
           echo '<div class="book-details">';
           echo '<div class="book-title">' . htmlspecialchars($book->Title) . '</div>';
           echo '<div class="book-author">' . htmlspecialchars($book->Author) . '</div>';
+          
           echo '</div>';
           echo '</div>';
         }
@@ -265,22 +266,28 @@ function updateBookPost($data)
       echo '</div>';
     } elseif ($page === 'MyLibrary') {
       $books = returnUserBooks(); // Fetch the user's borrowed books
-    
       if (!empty($books)) {
-        echo "<ul>";
+        echo '<div class="all-books-container">';
+        echo '<h2>All Books</h2>';
+        echo '<div class="book-grid">';
+
         foreach ($books as $book) {
-          echo "<li>";
-          echo "<strong>Title:</strong> " . htmlspecialchars($book['Title']) . "<br>";
-          echo "<strong>Author:</strong> " . htmlspecialchars($book['Author']) . "<br>";
-          echo "<strong>Publish Year:</strong> " . htmlspecialchars($book['Publish_year']) . "<br>";
-          echo "<strong>Valid Until:</strong> " . htmlspecialchars($book['expire_date']) . "<br>";
-          echo "</li>";
+          echo '<div class="book-item">';
+          echo '<img src="data:image/jpeg;base64,' . htmlspecialchars($book->Image) . '" alt="Book Cover">';
+          echo '<div class="book-details">';
+          echo '<div class="book-title">' . htmlspecialchars($book->Title) . '</div>';
+          echo '<div class="book-author">' . htmlspecialchars($book->Author) . '</div>';
+          echo '<div class="book-author"> available until : ' . htmlspecialchars($book->ExpireDate) . '</div>';
+
+          echo '</div>';
+          echo '</div>';
         }
-        echo "</ul>";
+
+        echo '</div>';
+        echo '</div>';
       } else {
         echo "<p>No books available at the moment.</p>";
       }
-
     } elseif ($page === 'login') {
       login();
     } elseif ($page === 'search') {
@@ -467,54 +474,55 @@ function updateBookPost($data)
     popup.style.display = 'none';
   }
 
-
-
   function fetchBooks(genreId) {
     const booksContainer = document.getElementById('books-container');
     booksContainer.innerHTML = 'Loading...';
 
     fetch(`fetch_books.php?genreId=${genreId}`)
-      .then(response => {
-        console.log('Raw response:', response); // Log raw response
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          console.error('Invalid response type:', contentType);
-          return response.text().then(text => { throw new Error(`Response was not JSON: ${text}`); });
-        }
-        return response.json();
-      })
-      .then(data => {
-        if (data.error) {
-          throw new Error(data.error);
-        }
-        console.log(data);
-        if (data.length > 0) {
-          const booksList = data.map(book => `
-        <li class="book-item" onclick='showBookDetails(${JSON.stringify(book)})'>
-            <strong>Title:</strong> ${book.Title}<br>
-            <strong>Author:</strong> ${book.Author}<br>
-            <strong>Publish Year:</strong> ${book.PublishYear}<br>
-            <strong>Available Copies:</strong> ${book.AvailableBooks}<br>
-            <strong>Genre:</strong> ${book.Genre}
-        </li>
-              `).join('');
+        .then(response => {
+            console.log('Raw response:', response); // Log raw response
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                console.error('Invalid response type:', contentType);
+                return response.text().then(text => { throw new Error(`Response was not JSON: ${text}`); });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            console.log(data);
+            if (data.length > 0) {
+                const booksList = data.map(book => `
+                    <div class="book-item" onclick='showBookDetails(${JSON.stringify(book)})'>
+                        <img src="data:image/jpeg;base64,${book.Image}" alt="Book Cover">
+                        <div class="book-details">
+                            <div class="book-title">${book.Title}</div>
+                            <div class="book-author">${book.Author}</div>
+                            <div class="book-publish-year">${book.PublishYear}</div>
+                            <div class="book-available-copies">${book.AvailableBooks} copies</div>
+                            <div class="book-genre">${book.Genre}</div>
+                        </div>
+                    </div>
+                `).join('');
 
-          // Insert the list of books into the container
-          booksContainer.innerHTML = `<ul id="bookList">${booksList}</ul>`;
-        } else {
-          // If no books, display a message
-          booksContainer.innerHTML = '<p>No books available in this genre.</p>';
-        }
+                // Insert the list of books into the container
+                booksContainer.innerHTML = `<div class="book-grid">${booksList}</div>`;
+            } else {
+                // If no books, display a message
+                booksContainer.innerHTML = '<p>No books available in this genre.</p>';
+            }
+        })
+        .catch(err => {
+            console.error('Fetch error:', err);
+            booksContainer.innerHTML = '<p>Error fetching books. Please try again later.</p>';
+        });
+}
 
-      })
-      .catch(err => {
-        console.error('Fetch error:', err);
-        booksContainer.innerHTML = '<p>Error fetching books. Please try again later.</p>';
-      });
-  }
 
   document.getElementById('addBookForm').addEventListener('submit', function (e) {
     e.preventDefault(); // Prevent the form from submitting normally
