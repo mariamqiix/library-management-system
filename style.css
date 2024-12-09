@@ -109,6 +109,10 @@ body {
     width: 80px;
     height: 120px;
   }
+
+  .book-image {
+    height: 60vh;
+  }
 }
 
 /* Content Area */
@@ -124,10 +128,10 @@ body {
 /* Books Section */
 .book-list-container {
   position: relative;
-  margin-top: 55px;
+  margin-top: 20px;
   background-color: #ffffff;
   border-radius: 10px;
-  padding: 20px;
+  padding: 30px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -135,7 +139,8 @@ body {
   font-size: 18px;
   color: #333;
   font-weight: bold;
-  margin-bottom: 15px;
+  display: inline-block;
+  margin-bottom: 10px;
 }
 
 .book-list-container a {
@@ -144,6 +149,11 @@ body {
   font-weight: bold;
   color: #4a90e2;
   float: right;
+}
+
+.book-list-container a:hover {
+  color: #004e92;
+  text-decoration: underline;
 }
 
 .book-list {
@@ -219,6 +229,7 @@ body {
   min-height: 400px;
 }
 
+/* Style for buttons */
 .genres-container button {
   background-color: #4a90e2;
   color: white;
@@ -229,8 +240,16 @@ body {
   margin: 5px;
 }
 
+/* Hover effect for buttons */
 .genres-container button:hover {
   background-color: #357ab8;
+}
+
+/* Active state for the selected genre button */
+.genres-container button.active {
+  background-color: #9cd2ff; /* Darker color for the active button */
+  color: black;
+
 }
 
 /* Genres Section */
@@ -303,7 +322,7 @@ table tr:hover {
   border: none;
   font-size: 30px;
   position: absolute;
-  top: 20px;
+  top: 10px;
   right: 20px;
   cursor: pointer;
   z-index: 1000;
@@ -311,10 +330,14 @@ table tr:hover {
 
 /* Book image */
 .book-image {
-  width: 100%;
-  height: auto;
-  border-radius: 10px;
-  margin-bottom: 15px;
+  max-width: 760px; /* Set the maximum width */
+  width: 100%; /* Image will scale to the container's width */
+  height: auto; /* Adjust height automatically based on aspect ratio */
+  aspect-ratio: 2/3; /* Aspect ratio of 60:40 (3:2) */
+  object-fit: cover; /* Ensures the image covers the area without distortion */
+  border-radius: 8px; /* Optional: for rounded corners */
+  margin-bottom: 20px;
+  margin-top: 25px;
 }
 
 /* Book title */
@@ -393,7 +416,7 @@ table tr:hover {
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   /* Responsive grid */
   gap: 20px;
-  margin-top: 20px;
+  margin-top: 40px;
 }
 
 .book-item {
@@ -843,4 +866,12 @@ form .secondary-button:hover {
   transform: scale(0.95);
   /* Slight shrink effect on click */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+
+.inlineDivs {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin-top: 50px;
 }

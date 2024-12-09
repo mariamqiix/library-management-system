@@ -52,11 +52,13 @@ function addBook($data)
 {
 
   // Extract form data
-  $title = $data['addBookTitle'];
-  $author = $data['addAuthor'];
-  $publishYear = $data['addPublishYear'];
-  $availableBooks = $data['addAvailableBooks'];
-  $genre = $data['addGenr'];
+  // Sanitize text inputs to prevent special characters
+  $title = htmlspecialchars(strip_tags($data['addBookTitle']), ENT_QUOTES, 'UTF-8');
+  $author = htmlspecialchars(strip_tags($data['addAuthor']), ENT_QUOTES, 'UTF-8');
+  $publishYear = htmlspecialchars(strip_tags($data['addPublishYear']), ENT_QUOTES, 'UTF-8');
+  $availableBooks = (int) $data['addAvailableBooks']; // Cast to integer
+  $genre = htmlspecialchars(strip_tags($data['addGenr']), ENT_QUOTES, 'UTF-8');
+  $description = htmlspecialchars(strip_tags($data['addBookDescription']), ENT_QUOTES, 'UTF-8');
   $imageFile = $_FILES['bookImage']; // The uploaded file
   // Check if the file is null or not uploaded
   if (empty($imageFile['name']) || $imageFile['error'] == UPLOAD_ERR_NO_FILE) {
@@ -65,7 +67,7 @@ function addBook($data)
   } else {
     $imageID = uploadImageToDatabase2($imageFile);
   }
-  createBook($title, $author, $publishYear, $availableBooks, $genre, $imageID);
+  createBook($title, $author, $publishYear, $availableBooks, $genre, $description, $imageID);
 }
 function registerUser($data)
 {
@@ -74,25 +76,72 @@ function registerUser($data)
     // Extract and sanitize user inputs
     $username = isset($_POST['username']) ? trim($_POST['username']) : '';
     $email = isset($_POST['email']) ? trim($_POST['email']) : '';
-    $password = isset($_POST['password']) ? trim(string: $_POST['password']) : '';
-    $firstName = isset($_POST['firstName']) ? trim(string: $_POST['firstName']) : '';
-    $lastName = isset($_POST['lastName']) ? trim(string: $_POST['lastName']) : '';
-    $rule = isset($_POST['rule']) ? trim(string: $_POST['rule']) : '';
+    $password = isset($_POST['password']) ? trim($_POST['password']) : '';
+    $firstName = isset($_POST['firstName']) ? trim($_POST['firstName']) : '';
+    $lastName = isset($_POST['lastName']) ? trim($_POST['lastName']) : '';
+    $rule = isset($_POST['rule']) ? trim($_POST['rule']) : '';
     $imageFile = $_FILES['userImage']; // The uploaded file
 
     // Validate inputs
     if (empty($username) || empty($email) || empty($password) || empty($firstName) || empty($lastName)) {
-      echo "All fields are required.";
+      http_response_code(400);  // Set HTTP status to 400 (Bad Request)
+      echo json_encode(["error" => "All fields are required."]);
       return;
     }
 
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-      echo "Invalid email format.";
+    // Validate username (alphanumeric, with optional underscore or hyphen)
+    if (!empty($username) && (!preg_match('/^[a-zA-Z0-9_-]+$/', $username) || strlen($username) < 4)) {
+      http_response_code(400);  // Set HTTP status to 400 (Bad Request)
+      echo json_encode(["error" => "Invalid username format."]);
+      return;  // Stop execution if validation fails
+    } elseif (checkUser('Username', $username)) {
+      http_response_code(400);  // Set HTTP status to 400 (Bad Request)
+      echo json_encode(["error" => "Username already exists."]);
+      return;
+    }
+
+    // Validate email format
+    if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+      http_response_code(400);  // Set HTTP status to 400 (Bad Request)
+      echo json_encode(["error" => "Invalid email format."]);
+      return;
+    } elseif (checkUser('Email', $email)) {
+      http_response_code(400);  // Set HTTP status to 400 (Bad Request)
+      echo json_encode(["error" => "Email already exists."]);
+      return;
+    }
+
+    // Validate password
+    if (!validatePassword($password)) {
+      http_response_code(400);  // Set HTTP status to 400 (Bad Request)
+      echo json_encode(["error" => "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character."]);
+      return;
+    }
+
+    // Validate first name and last name (alphabetic only, can include spaces)
+    if (!empty($firstName) && !preg_match('/^[a-zA-Z ]+$/', $firstName)) {
+      http_response_code(400);  // Set HTTP status to 400 (Bad Request)
+      echo json_encode(["error" => "Invalid first name format."]);
+      return;
+    }
+
+    if (!empty($lastName) && !preg_match('/^[a-zA-Z ]+$/', $lastName)) {
+      http_response_code(400);  // Set HTTP status to 400 (Bad Request)
+      echo json_encode(["error" => "Invalid last name format."]);
+      return;
+    }
+
+    // Validate rule (e.g., only "admin" or "user")
+    $validRules = ['Admin', 'User'];  // Define valid roles
+    if (!empty($rule) && !in_array($rule, $validRules)) {
+      http_response_code(400);  // Set HTTP status to 400 (Bad Request)
+      echo json_encode(["error" => "Invalid rule selected."]);
       return;
     }
 
     // Hash the password
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
     // Check if the file is null or not uploaded
     if (empty($imageFile['name']) || $imageFile['error'] == UPLOAD_ERR_NO_FILE) {
       // No file uploaded, return the default ImageId = 1
@@ -100,17 +149,22 @@ function registerUser($data)
     } else {
       $imageID = uploadImageToDatabase2($imageFile);
     }
+
     // Include the database functions file
     try {
-      // Call the CreatetUser function to save the user
+      // Call the CreateUser function to save the user
       CreatetUser($username, $firstName, $lastName, $hashedPassword, $email, $rule, $imageID);
-      echo "User registered successfully.";
+      // Return success response if the user was created successfully
+      echo json_encode(["message" => "User registered successfully."]);
     } catch (Exception $e) {
       // Handle any errors that occur during user creation
-      echo "Error: " . $e->getMessage();
+      http_response_code(500);  // Set HTTP status to 500 (Internal Server Error)
+      echo json_encode(["error" => "Error: " . $e->getMessage()]);
     }
   }
+  exit;
 }
+
 
 
 function updateBookPost($data)
@@ -124,9 +178,10 @@ function updateBookPost($data)
   $publishYear = $data['updatePublishYear'];
   $availableBooks = $data['updateAvailableBooks'];
   $genr = $data['updateGenr'];
+  $description = $data['updateBookDescription'];
 
   // Call the updateBook function
-  updateBook($bookId, $title, $author, $publishYear, $availableBooks, $genr);
+  updateBook($bookId, $title, $author, $publishYear, $availableBooks, $genr, $description);
 }
 ?>
 
@@ -189,6 +244,7 @@ function updateBookPost($data)
     // Display content based on the selected page
     if ($page === 'home') {
       $books = GetAllBooks();
+      echo '<div class="inlineDivs">';
 
       if (!empty($books)) {
         if (!empty($books)) {
@@ -224,6 +280,8 @@ function updateBookPost($data)
       } else {
         echo "<p>No books available at the moment.</p>";
       }
+      echo '</div>';
+
     } elseif ($page === 'All Books') {
       $books = GetAllBooks();
       if (!empty($books)) {
@@ -237,7 +295,7 @@ function updateBookPost($data)
           echo '<div class="book-details">';
           echo '<div class="book-title">' . htmlspecialchars($book->Title) . '</div>';
           echo '<div class="book-author">' . htmlspecialchars($book->Author) . '</div>';
-          
+
           echo '</div>';
           echo '</div>';
         }
@@ -252,9 +310,12 @@ function updateBookPost($data)
       echo "<h1>Genres</h1>";
 
       $genres = fetchGenres();
+
+      // Assuming you already have your genres array available from the fetchGenres() function
       if (count($genres) > 0) {
         foreach ($genres as $genre) {
-          echo "<button onclick='fetchBooks({$genre['GenreId']})'>{$genre['Genre']}</button>";
+          // Add a 'data-genre-id' to each button
+          echo "<button data-genre-id='{$genre['GenreId']}' onclick='fetchBooks({$genre['GenreId']})'>{$genre['Genre']}</button>";
         }
       } else {
         echo "<p>No genres available.</p>";
@@ -365,9 +426,9 @@ function updateBookPost($data)
 
   <!-- ADD BOOK Popup -->
   <div id="addBook" style="display: none;">
-    <h2>Add a New Book</h2>
     <form id="addBookForm">
       <input type="hidden" name="formType" value="addBookForm">
+      <h2>Add a New Book</h2><br><br>
 
       <label for="addBookTitle">Book Title:</label>
       <input type="text" id="addBookTitle" name="addBookTitle" required><br><br>
@@ -377,6 +438,9 @@ function updateBookPost($data)
 
       <label for="addGenr">Genr:</label>
       <input type="text" id="addGenr" name="addGenr" required><br><br>
+
+      <label for="addBookDescription">Book Description :</label>
+      <input type="text" id="addBookDescription" name="addBookDescription" required><br><br>
 
       <label for="addPublishYear">Publish Year:</label>
       <input type="date" id="addPublishYear" name="addPublishYear" required><br><br>
@@ -406,18 +470,22 @@ function updateBookPost($data)
       </select><br><br>
 
       <label for="updateBookTitle">Book Title:</label>
-      <input type="text" id="updateBookTitle" name="updateBookTitle"><br><br>
+      <input type="text" id="updateBookTitle" name="updateBookTitle" required><br><br>
 
       <label for="updateAuthor">Author:</label>
-      <input type="text" id="updateAuthor" name="updateAuthor"><br><br>
+      <input type="text" id="updateAuthor" name="updateAuthor" required><br><br>
 
       <label for="updatePublishYear">Publish Year:</label>
-      <input type="date" id="updatePublishYear" name="updatePublishYear"><br><br>
+      <input type="date" id="updatePublishYear" name="updatePublishYear" required><br><br>
+
+      <label for="updateBookDescription">Book Description:</label>
+      <input type="text" id="updateBookDescription" name="updateBookDescription" required><br><br>
+
 
       <label for="updateAvailableBooks">Number of Copies:</label>
-      <input type="number" id="updateAvailableBooks" name="updateAvailableBooks"><br><br>
+      <input type="number" id="updateAvailableBooks" name="updateAvailableBooks" required><br><br>
       <label for="updateGenr">Genr:</label>
-      <input type="text" id="updateGenr" name="updateGenr"><br><br>
+      <input type="text" id="updateGenr" name="updateGenr" required><br><br>
       <button type="submit">Update Book</button>
       <button type="button" onclick="closePopUp('updateBook')">Cancel</button>
     </form>
@@ -473,55 +541,62 @@ function updateBookPost($data)
     const popup = document.getElementById(id);
     popup.style.display = 'none';
   }
-
   function fetchBooks(genreId) {
     const booksContainer = document.getElementById('books-container');
     booksContainer.innerHTML = 'Loading...';
 
+    // Get all buttons and remove the "active" class from them
+    const buttons = document.querySelectorAll('.genres-container button');
+    buttons.forEach(button => {
+      button.classList.remove('active');
+    });
+
+    // Add the "active" class to the clicked button
+    const clickedButton = document.querySelector(`button[data-genre-id="${genreId}"]`);
+    clickedButton.classList.add('active');
+
     fetch(`fetch_books.php?genreId=${genreId}`)
-        .then(response => {
-            console.log('Raw response:', response); // Log raw response
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const contentType = response.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                console.error('Invalid response type:', contentType);
-                return response.text().then(text => { throw new Error(`Response was not JSON: ${text}`); });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.error) {
-                throw new Error(data.error);
-            }
-            console.log(data);
-            if (data.length > 0) {
-                const booksList = data.map(book => `
+      .then(response => {
+        console.log('Raw response:', response); // Log raw response
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          console.error('Invalid response type:', contentType);
+          return response.text().then(text => { throw new Error(`Response was not JSON: ${text}`); });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        console.log(data);
+        if (data.length > 0) {
+          const booksList = data.map(book => `
                     <div class="book-item" onclick='showBookDetails(${JSON.stringify(book)})'>
                         <img src="data:image/jpeg;base64,${book.Image}" alt="Book Cover">
                         <div class="book-details">
                             <div class="book-title">${book.Title}</div>
                             <div class="book-author">${book.Author}</div>
-                            <div class="book-publish-year">${book.PublishYear}</div>
-                            <div class="book-available-copies">${book.AvailableBooks} copies</div>
-                            <div class="book-genre">${book.Genre}</div>
                         </div>
                     </div>
                 `).join('');
 
-                // Insert the list of books into the container
-                booksContainer.innerHTML = `<div class="book-grid">${booksList}</div>`;
-            } else {
-                // If no books, display a message
-                booksContainer.innerHTML = '<p>No books available in this genre.</p>';
-            }
-        })
-        .catch(err => {
-            console.error('Fetch error:', err);
-            booksContainer.innerHTML = '<p>Error fetching books. Please try again later.</p>';
-        });
-}
+          // Insert the list of books into the container
+          booksContainer.innerHTML = `<div class="book-grid">${booksList}</div>`;
+        } else {
+          // If no books, display a message
+          booksContainer.innerHTML = '<p>No books available in this genre.</p>';
+        }
+      })
+      .catch(err => {
+        console.error('Fetch error:', err);
+        booksContainer.innerHTML = '<p>Error fetching books. Please try again later.</p>';
+      });
+  }
+
 
 
   document.getElementById('addBookForm').addEventListener('submit', function (e) {
@@ -543,12 +618,8 @@ function updateBookPost($data)
     };
     xhr.send(formData); // Send the form data to the server
   });
-
-
-
   document.getElementById('registerUserForm').addEventListener('submit', function (e) {
     e.preventDefault(); // Prevent the form from submitting normally
-
 
     // Create a new FormData object to capture the form data
     var formData = new FormData(this);
@@ -556,15 +627,60 @@ function updateBookPost($data)
     // Perform the AJAX request
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '<?php echo $_SERVER['PHP_SELF']; ?>', true); // Form action (same page)
+
     xhr.onreadystatechange = function () {
-      if (xhr.readyState === 4 && xhr.status === 200) {
-        // Close the popup if the response is successful
-        closePopUp('registerUser');
-        alert('user added successfully!'); // Optionally, show a success message
+      if (xhr.readyState === 4) {
+        try {
+          // Attempt to find and parse the first JSON object in the response
+          var jsonResponse = extractFirstJson(xhr.responseText);
+
+          if (jsonResponse) {
+            if (xhr.status === 200) {
+              // Close the popup if the response is successful
+              closePopUp('registerUser');
+              alert(jsonResponse.message); // Show the success message from PHP
+            } else {
+              // Handle error response and show the message returned from PHP
+              alert(jsonResponse.error); // Show the error message from the response
+            }
+          } else {
+            // If no JSON object was found, log an error
+            console.error('No JSON response found.');
+            alert('An unexpected error occurred. No JSON response was found.');
+          }
+        } catch (e) {
+          console.error('Error parsing JSON response:', e);
+          console.error('Response text:', xhr.responseText);
+          alert('An unexpected error occurred.');
+
+          // Optionally, you can check for HTML content in the response to provide more specific error handling
+          if (xhr.responseText.includes('<html>')) {
+            alert('The server returned an error page instead of the expected data.');
+          }
+        }
       }
     };
+
     xhr.send(formData); // Send the form data to the server
   });
+
+  // Function to extract the first valid JSON object from a string
+  function extractFirstJson(responseText) {
+    // Regular expression to match the first JSON object (anything between curly braces)
+    var jsonMatch = responseText.match(/{.*?}/);
+
+    if (jsonMatch && jsonMatch[0]) {
+      try {
+        return JSON.parse(jsonMatch[0]); // Parse and return the first JSON object
+      } catch (e) {
+        console.error('Error parsing the JSON string:', e);
+      }
+    }
+    return null; // Return null if no JSON object is found
+  }
+
+
+
   document.getElementById('updateBookForm').addEventListener('submit', function (e) {
     e.preventDefault(); // Prevent the form from submitting normally
 
@@ -598,6 +714,12 @@ function updateBookPost($data)
         option.textContent = book.Title; // Display the book title
         select.appendChild(option);
       });
+      document.getElementById('updateBookTitle').value = books[0].Title;
+      document.getElementById('updateAuthor').value = books[0].Author;
+      document.getElementById('updatePublishYear').value = books[0].PublishYear;
+      document.getElementById('updateAvailableBooks').value = books[0].AvailableBooks;
+      document.getElementById('updateGenr').value = books[0].Genre;
+      document.getElementById('updateBookDescription').value = books[0].BookDescription;
     });
   }
 
@@ -612,6 +734,7 @@ function updateBookPost($data)
       document.getElementById('updatePublishYear').value = selectedBook.PublishYear;
       document.getElementById('updateAvailableBooks').value = selectedBook.AvailableBooks;
       document.getElementById('updateGenr').value = selectedBook.Genre;
+      document.getElementById('updateBookDescription').value = selectedBook.BookDescription;
     }
   }
 
@@ -663,7 +786,7 @@ function updateBookPost($data)
     document.getElementById('bookGenre').innerText = book.Genre;
 
     // Set description
-    document.getElementById('bookDescription').innerText = book.Description || "No description available.";
+    document.getElementById('bookDescription').innerText = book.BookDescription || "No description available.";
 
     // Enable or disable borrow button
     const borrowButton = document.getElementById('borrowButton');

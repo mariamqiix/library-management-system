@@ -47,7 +47,7 @@ $tables = [
     "CREATE TABLE IF NOT EXISTS user_session (
         UserId INT,
         Session VARCHAR(50),
-        Expire_date DATE,
+        Expire_date DATETIME DEFAULT (CURRENT_TIMESTAMP + INTERVAL 1 DAY),
         FOREIGN KEY (UserId) REFERENCES user(UserId)
     )",
     // UserRule table

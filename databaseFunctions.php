@@ -23,7 +23,8 @@ function searchBooks($searchString)
             b.Title, 
             b.Author, 
             b.Publish_year, 
-            b.Available_books, 
+            b.Available_books,
+            b.BookDescription, 
             g.Genre, 
             i.ImageData
         FROM 
@@ -42,6 +43,8 @@ function searchBooks($searchString)
             b.Author LIKE '%$searchString%' 
         OR 
             g.Genre LIKE '%$searchString%'
+        OR 
+            b.BookDescription LIKE '%$searchString%'
     ";
 
     $result = $conn->query($sql);
@@ -60,6 +63,7 @@ function searchBooks($searchString)
                 'Author' => $row['Author'],
                 'PublishYear' => $row['Publish_year'],
                 'AvailableBooks' => $row['Available_books'],
+                'BookDescription' => $row['BookDescription'],
                 'Genre' => $row['Genre'],
                 'Image' => base64_encode($row['ImageData']) // Convert binary image data to base64 string
             ];
@@ -130,7 +134,7 @@ function CreatetUser($username, $firstName, $lastName, $password, $email, $rule 
     }
 }
 
-function createBook($title, $author, $publishYear, $availableBooks, $genre, $imageId = 1)
+function createBook($title, $author, $publishYear, $availableBooks, $genre, $description, $imageId = 1)
 {
     global $conn;
 
@@ -140,6 +144,7 @@ function createBook($title, $author, $publishYear, $availableBooks, $genre, $ima
     $publishYear = $conn->real_escape_string($publishYear);
     $availableBooks = $conn->real_escape_string($availableBooks);
     $genre = $conn->real_escape_string($genre);
+    $description = $conn->real_escape_string($description);
 
     // Step 1: Check if the genre exists
     $genreSql = "SELECT GenreId FROM genres WHERE Genre = '$genre' LIMIT 1";
@@ -161,8 +166,8 @@ function createBook($title, $author, $publishYear, $availableBooks, $genre, $ima
     }
 
     // Step 2: Insert the book into the 'book' table
-    $insertBookSql = "INSERT INTO book (Title, Author, Publish_year, Available_books) 
-                      VALUES ('$title', '$author', '$publishYear', '$availableBooks')";
+    $insertBookSql = "INSERT INTO book (Title, Author, Publish_year, Available_books,BookDescription) 
+                      VALUES ('$title', '$author', '$publishYear', '$availableBooks','$description')";
 
     if ($conn->query($insertBookSql) === TRUE) {
         // Step 3: Get the newly inserted BookId
@@ -275,7 +280,7 @@ function returnBook($bookId, $userId)
     }
 }
 
-function updateBook($bookId, $title, $author, $publishYear, $availableBooks, $genre)
+function updateBook($bookId, $title, $author, $publishYear, $availableBooks, $genre, $description)
 {
     // Obtain a database connection
     global $conn;
@@ -292,8 +297,9 @@ function updateBook($bookId, $title, $author, $publishYear, $availableBooks, $ge
 
     if ($bookResult->num_rows > 0) {
         // Step 2: Update the book details using prepared statements
-        $stmt = $conn->prepare("UPDATE book SET Title = ?, Author = ?, Publish_year = ?, Available_books = ? WHERE BookId = ?");
-        $stmt->bind_param("sssii", $title, $author, $publishYear, $availableBooks, $bookId);
+        $stmt = $conn->prepare("UPDATE book SET Title = ?, Author = ?, Publish_year = ?, Available_books = ?, BookDescription = ? WHERE BookId = ?");
+        $stmt->bind_param("sssiis", $title, $author, $publishYear, $availableBooks, $description, $bookId);
+
         if ($stmt->execute()) {
             // Step 3: Check if the genre exists
             $stmt = $conn->prepare("SELECT GenreId FROM genres WHERE Genre = ? LIMIT 1");
@@ -453,7 +459,7 @@ function getBookDetails($BookID)
 
     // SQL query to fetch book details and the associated genre
     $sql = "
-        SELECT b.BookId, b.Title, b.Author, b.Publish_year, b.Available_books, g.Genre
+        SELECT b.BookId, b.Title, b.Author, b.Publish_year, b.Available_books,b.BookDescription, g.Genre
         FROM book b
         LEFT JOIN book_genre bg ON b.BookId = bg.BookId
         LEFT JOIN genres g ON bg.GenreId = g.GenreId
@@ -476,6 +482,7 @@ function getBookDetails($BookID)
             'Author' => $row['Author'],
             'PublishYear' => $row['Publish_year'],
             'AvailableBooks' => $row['Available_books'],
+            'BookDescription' => $row['BookDescription'],
             'Genre' => $row['Genre'] // Genre field
         ];
 
@@ -499,6 +506,7 @@ function GetAllBooks()
             b.Author, 
             b.Publish_year, 
             b.Available_books, 
+            b.BookDescription,
             g.Genre, 
             i.ImageData
         FROM 
@@ -529,6 +537,7 @@ function GetAllBooks()
                 'Author' => $row['Author'],
                 'PublishYear' => $row['Publish_year'],
                 'AvailableBooks' => $row['Available_books'],
+                'BookDescription' => $row['BookDescription'],
                 'Genre' => $row['Genre'], // Genre field
                 'Image' => base64_encode($row['ImageData']) // Convert binary image data to base64 string
             ];
@@ -749,7 +758,7 @@ function fetchBooksByGenre($genreId)
 
     // Prepare SQL to fetch books along wi th their genres and image data
     $stmt = $conn->prepare("
-        SELECT b.BookId, b.Title, b.Author, b.Publish_year, b.Available_books, g.Genre, i.ImageData
+        SELECT b.BookId, b.Title, b.Author, b.Publish_year, b.Available_books,b.BookDescription, g.Genre, i.ImageData
         FROM book b
         JOIN book_genre bg ON b.BookId = bg.BookId
         JOIN genres g ON bg.GenreId = g.GenreId  -- Use the 'genres' table (as per your schema)
@@ -776,6 +785,7 @@ function fetchBooksByGenre($genreId)
                 'Author' => $row['Author'],
                 'PublishYear' => $row['Publish_year'],
                 'AvailableBooks' => $row['Available_books'],
+                'BookDescription' => $row['BookDescription'],
                 'Genre' => $row['Genre'], // Genre field from 'genres' table
                 'Image' => $imageData // Base64 encoded image data
             ];
@@ -904,5 +914,14 @@ function uploadImageToDatabase2($imageFile)
         return null;
     }
 }
+
+
+
+function validatePassword($password)
+{
+    $pattern = "/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{6,12}$/";
+    return preg_match($pattern, $password);
+}
+
 
 ?>

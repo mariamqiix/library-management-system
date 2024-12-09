@@ -2,13 +2,12 @@
 
 function login()
 {
-    // Variable to store error messages
-    $error = '';
-
-    // Check if the form was submitted
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $username = trim($_POST['username'] ?? '');
         $loginPassword = trim($_POST['password'] ?? '');
+        
+        // Variable to store error messages
+        $error = '';
 
         // Validate form fields
         if (empty($username) || empty($loginPassword)) {
@@ -19,7 +18,8 @@ function login()
                 $password = GetPassword("Username", $username);
                 if (password_verify($loginPassword, $password)) {
                     $user = GetUser("Username", $username);
-                    createUserSession($user['Username'], $user['UserId'], $user['Rule']);
+                    $sessionId = createUserSession($user['Username'], $user['UserId'], $user['Rule']);
+                    addUserSession($user['UserId'], $sessionId); // Store session in DB
                     header("Location: home.php?page=home");
                     exit;
                 } else {
@@ -29,7 +29,8 @@ function login()
                 $password = GetPassword("Email", $username);
                 if (password_verify($loginPassword, $password)) {
                     $user = GetUser("Email", $username);
-                    createUserSession($user['Username'], $user['UserId'], $user['Rule']);
+                    $sessionId = createUserSession($user['Username'], $user['UserId'], $user['Rule']);
+                    addUserSession($user['UserId'], $sessionId); // Store session in DB
                     header("Location: home.php?page=home");
                     exit;
                 } else {
@@ -38,6 +39,12 @@ function login()
             } else {
                 $error = "The username or email you entered is incorrect.";
             }
+        }
+
+        // Display the error if any
+        if ($error) {
+            $safeError = htmlspecialchars($error, ENT_QUOTES, 'UTF-8');
+            echo "<script>document.getElementById('error-message').innerHTML = '$safeError';</script>";
         }
     }
 
@@ -51,7 +58,7 @@ function login()
 
     echo "<div class='input_container'>";
     echo "<label class='input_label' for='username'>Username</label>";
-    echo "<input placeholder='name@mail.com' title='Input title' name='username' type='text' class='input_field' id='username' value='" . htmlspecialchars($username) . "'>";
+    echo "<input placeholder='name@mail.com' title='Input title' name='username' type='text' class='input_field' id='username'>";
     echo "</div>";
 
     echo "<div class='input_container'>";
@@ -59,10 +66,8 @@ function login()
     echo "<input placeholder='Password' title='Input title' name='password' type='password' class='input_field' id='password'>";
     echo "</div>";
 
-    // Display error message if any
-    if ($error) {
-        echo "<p id='error-message' style='color:red;'>$error</p><br>";
-    }
+    // Display error message in the form
+    echo "<p id='error-message' style='color:red;'></p><br>";
 
     echo "<button title='Login' type='submit' class='sign-in_btn'>";
     echo "<span>Sign In</span>";
@@ -78,15 +83,22 @@ function login()
 }
 
 
+
 function createUserSession($userId, $username, $rule)
 {
+    session_start();  // Ensure session is started
+
     // Store user information in session
     $_SESSION['user_id'] = $userId;
     $_SESSION['username'] = $username;
     $_SESSION['rule'] = GetUserRule($username);
+    $sessionId = session_id();  // Use PHP's built-in session ID generator
+
     // Set a cookie with the username (expires in 1 hour)
     setcookie("username", $username, time() + 3600, "/"); // "/" means available across the entire site
     setcookie("rule", GetUserRule($username), time() + 3600, "/"); // "/" means available across the entire site
+    return $sessionId;
+
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -214,11 +226,6 @@ function register()
 }
 
 
-function validatePassword($password)
-{
-    $pattern = "/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{6,12}$/";
-    return preg_match($pattern, $password);
-}
 
 function logout()
 {
@@ -226,9 +233,6 @@ function logout()
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
-
-    // Unset all session variables
-    $_SESSION = [];
 
     // If there's a session cookie, delete it
     if (ini_get("session.use_cookies")) {
@@ -244,8 +248,9 @@ function logout()
         );
     }
 
-    // Destroy the session
-    session_destroy();
+    $sessionId = session_id();
+    DeleteUserSession($sessionId);  // Remove session from database
+    session_destroy();  // Destroy the session
 
     // Remove the 'username' cookie if it exists
     if (isset($_COOKIE['username'])) {
