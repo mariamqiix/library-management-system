@@ -875,3 +875,208 @@ form .secondary-button:hover {
   justify-content: space-between;
   margin-top: 50px;
 }
+
+
+/* Dark Mode with Red Theme */
+body.dark-theme {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+body.dark-theme .navbar {
+  background-color: #1f1f1f;
+}
+
+body.dark-theme .navbar a {
+  color: #e0e0e0;
+}
+
+body.dark-theme .navbar a.active i,
+body.dark-theme .navbar a:hover i {
+  background-color: #b71c1c; /* Deep Red */
+}
+
+body.dark-theme .content {
+  background-color: #181818;
+  color: #e0e0e0;
+}
+
+body.dark-theme .book-list-container {
+  background-color: #1f1f1f;
+}
+
+body.dark-theme .book-item {
+  background-color: #292929;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-theme .book-item:hover {
+  box-shadow: 0 6px 12px rgba(183, 28, 28, 0.5); /* Slight red glow */
+}
+
+body.dark-theme .genres-container,
+body.dark-theme table {
+  background-color: #1f1f1f;
+  color: #e0e0e0;
+}
+
+body.dark-theme table th {
+  background-color: #333;
+  color: #b71c1c;
+}
+
+body.dark-theme .sidebar {
+  background-color: #1f1f1f;
+}
+
+body.dark-theme form {
+  background-color: #1f1f1f;
+  color: #e0e0e0;
+}
+
+body.dark-theme button,
+body.dark-theme #borrowButton {
+  background-color: #b71c1c;
+  color: #e0e0e0;
+  border: none;
+}
+
+body.dark-theme button:hover,
+body.dark-theme #borrowButton:hover {
+  background-color: #e53935; /* Lighter red on hover */
+}
+
+body.dark-theme a {
+  color: #b71c1c;
+}
+
+body.dark-theme a:hover {
+  color: #e53935; /* Lighter red */
+}
+
+
+/* Button for toggling dark mode */
+.toggle-dark-mode {
+  position: fixed;
+  top: 93%;
+  right: 20px;
+  background-color: #1e3a8a;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 24px;
+  padding: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  z-index: 100000;
+  transition: background-color 0.3s ease;
+}
+
+.toggle-dark-mode:hover {
+  background-color: #357ab8;
+}
+
+/* Dark mode styles for buttons */
+.toggle-dark-mode.dark-mode {
+  background-color: #9c2a2a;
+}
+
+.toggle-dark-mode.dark-mode:hover {
+  background-color: #7d1d1d;
+}
+/* Dark Theme */
+body.dark-theme {
+  --book-author-color: #b71c1c;
+}
+
+
+/* Default (Light Theme) */
+:root {
+  --admin-options-bg: #f9f9f9;
+  --admin-options-text: #333;
+  --admin-options-border: #ddd;
+}
+
+/* Dark Theme */
+body.dark-theme {
+  --admin-options-bg: #2b2b2b;
+  --admin-options-text: #e53935;
+  --admin-options-border: #444;
+}
+
+.admin-options {
+  background-color: var(--admin-options-bg);
+  color: var(--admin-options-text);
+  border: 1px solid var(--admin-options-border);
+  padding: 10px;
+  border-radius: 5px;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.admin-options li {
+  color: vlir(--admin-options-text);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.admin-options a:hover {
+  color: #ff1744; /* Optional hover color for links */
+}
+
+
+/* Default (Light Theme) */
+:root {
+  --admin-li-bg: #ffffff;
+  --admin-li-text: #333;
+  --admin-li-border: #ddd;
+}
+
+/* Dark Theme */
+body.dark-theme {
+  --admin-li-bg: #3a3a3a; /* Dark background */
+  --admin-li-text: #e53935; /* Red text color */
+  --admin-li-border: #555; /* Subtle border */
+}
+
+.admin-options li {
+  background-color: var(--admin-li-bg);
+  color: var(--admin-li-text);
+  border: 1px solid var(--admin-li-border);
+  padding: 10px;
+  margin: 5px 0; /* Maintain spacing */
+  list-style: none;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+
+/* Hover Effect */
+.admin-options li:hover {
+  background-color: var(--admin-li-hover-bg);
+  color: var(--admin-li-hover-text);
+  border-color: var(--admin-li-hover-bg); /* Optional, matches hover background */
+}
+
+
+/* Default (Light Theme) */
+:root {
+  --top-navbar-bg:  #0b173d;
+  --top-navbar-text: #ffffff;
+  --top-navbar-hover-bg: #696969; /* Slightly gray for hover */
+  --top-navbar-hover-text: #000;
+}
+
+/* Dark Theme */
+body.dark-theme {
+  --top-navbar-bg:  #3d0b0b;
+  --top-navbar-text: #e53935;
+  --top-navbar-hover-bg: #3a3a3a; /* Slightly lighter dark for hover */
+  --top-navbar-hover-text: #ff5757;
+}
+
+.top-navbar {
+  background-color: var(--top-navbar-bg);
+  color: var(--top-navbar-text);
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--top-navbar-hover-bg); /* Optional border */
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

@@ -201,6 +201,8 @@ function updateBookPost($data)
   <div class="top-navbar">
     <div class="logo">
     </div>
+    <button id="darkModeToggle" class="toggle-dark-mode">🌙</button>
+
     <div class="custom-search-container">
       <form action="?page=search" method="POST" id="customSearch">
         <input type="text" name="query" id="customSearchInput" placeholder="Search for books, authors..." required>
@@ -896,6 +898,52 @@ function updateBookPost($data)
     .catch(error => {
       console.error('Error fetching books:', error);
     });
+
+  function setCookie(name, value, days) {
+    const date = new Date();
+    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+    document.cookie = `${name}=${value}; expires=${date.toUTCString()}; path=/`;
+  }
+
+  function getCookie(name) {
+    const cookies = document.cookie.split('; ');
+    for (const cookie of cookies) {
+      const [key, value] = cookie.split('=');
+      if (key === name) return value;
+    }
+    return null;
+  }
+
+  const darkModeToggle = document.getElementById('darkModeToggle');
+  const body = document.body;
+
+  function applyDarkMode() {
+    body.classList.add('dark-theme');
+    darkModeToggle.textContent = '🌞';
+    setCookie('theme', 'dark', 7); // Save for 7 days
+  }
+
+  function removeDarkMode() {
+    body.classList.remove('dark-theme');
+    darkModeToggle.textContent = '🌙';
+    setCookie('theme', 'light', 7);
+  }
+
+  darkModeToggle.addEventListener('click', () => {
+    if (body.classList.contains('dark-theme')) {
+      removeDarkMode();
+    } else {
+      applyDarkMode();
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = getCookie('theme');
+    if (savedTheme === 'dark') {
+      applyDarkMode();
+    }
+  });
+
 </script>
 
 
